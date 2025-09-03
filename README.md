@@ -13,26 +13,14 @@ graph TB
     User[User] -->|Conversation| Client[LLM Client<br/>Claude/GPT/etc]
     Client -->|MCP Protocol| MCP[Memento MCP Server]
     
-    MCP -->|Store/Query| VectorDB[(Vector Database<br/>ChromaDB)]
-    MCP -->|Embed| Embedder[Embedding Model<br/>OpenAI Ada-002]
+    MCP -->|Store/Query| VectorDB[(Vector Database)]
+    MCP -->|Embed| Embedder[Embedding Model]
     
     subgraph "Memento Core"
         MCP
         VectorDB
         Embedder
     end
-    
-    subgraph "Memory Operations"
-        Create[Create Memory]
-        Retrieve[Retrieve Memories]
-        Update[Update Memory]
-        Search[Semantic Search]
-    end
-    
-    MCP --> Create
-    MCP --> Retrieve
-    MCP --> Update
-    MCP --> Search
     
     style User fill:#e1f5fe
     style Client fill:#fff3e0
@@ -42,36 +30,18 @@ graph TB
 
 ## 🚀 Quick Start
 
-```bash
-# Install dependencies
-npm install
-
-# Configure environment
-cp .env.example .env
-# Edit .env with your API keys
-
-# Start the MCP server
-npm run start
-
-# In your LLM client, connect to:
-# mcp://localhost:3000/memento
-```
+TODO
 
 ## 📁 Project Structure
 
 ```
 memento/
 ├── Documentation/          # Project documentation
-│   ├── sample-use-cases.md
-│   ├── mcp-tool-specification.md
-│   ├── data-model.md
-│   └── ADR/               # Architecture Decision Records
 ├── src/
 │   ├── mcp-server/        # MCP server implementation
 │   ├── memory-store/      # Vector DB abstraction
 │   └── utils/             # Shared utilities
-├── tests/                 # Test suites
-└── examples/              # Example conversations
+└── tests/                 # Test suites
 ```
 
 ## 🎮 Core Features
