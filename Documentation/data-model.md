@@ -1,9 +1,9 @@
 # Data Model
 
 ## Overview
-This document defines the structure of memories and related entities in the Memento system.
+This document defines the simplified structure of memories in the Memento system. The design prioritizes simplicity and flexibility, using natural language and semantic search rather than rigid categorization.
 
-## Core Entities
+## Core Entity
 
 ### Memory
 
@@ -11,116 +11,82 @@ The fundamental unit of information storage in Memento.
 
 ```typescript
 interface Memory {
-  // Identification
+  // Core Fields
   id: string;                    // Unique identifier (e.g., "mem_abc123...")
-  version: number;                // Version number for updates
-  
-  // Content
-  content: string;                // The actual memory/fact
-  embedding?: number[];           // Vector embedding for semantic search
+  content: string;                // Natural language memory/fact
+  embedding: number[];            // Vector embedding for semantic search
   
   // Metadata
-  subject: string;                // Primary subject (e.g., "Liam", "Emma")
-  category: MemoryCategory;       // Type classification
-  tags: string[];                 // Additional categorization
-  
-  // Trust & Validity
   confidence: number;             // Confidence score (0-1)
-  source: MemorySource;           // How this memory was created
-  superseded_by?: string;         // ID of memory that replaces this one
+  source: 'explicit' | 'extracted';  // How memory was created
+  
+  // Conflict Tracking
   supersedes?: string;            // ID of memory this replaces
+  superseded_by?: string;         // ID of memory that replaces this
   
   // Timestamps
   created_at: Date;               // When memory was created
   updated_at: Date;               // Last modification time
   accessed_at: Date;              // Last retrieval time
-  expires_at?: Date;              // Optional expiration
-  
-  // Conversation Context
-  conversation_id?: string;       // Which conversation created this
-  message_id?: string;            // Specific message reference
 }
 ```
 
-### MemoryCategory
+### Design Decisions
 
-Enumeration of memory types for classification.
-
-```typescript
-enum MemoryCategory {
-  PREFERENCE = "preference",       // Likes, dislikes, choices
-  RESTRICTION = "restriction",     // Limitations, allergies, constraints  
-  FACT = "fact",                  // Objective information
-  SKILL = "skill",                // Abilities, knowledge level
-  RELATIONSHIP = "relationship",   // Connections between people
-  GOAL = "goal",                  // Objectives, plans
-  HISTORY = "history",            // Past events, experiences
-  CONTEXT = "context"             // Situational information
-}
-```
-
-### MemorySource
-
-How a memory was created or derived.
-
-```typescript
-enum MemorySource {
-  EXPLICIT = "explicit",          // User said "remember that..."
-  EXTRACTED = "extracted",        // LLM extracted from conversation
-  INFERRED = "inferred",         // LLM inferred from context
-  UPDATED = "updated",           // Modified version of existing memory
-  SYSTEM = "system"              // System-generated metadata
-}
-```
+- **No Categories**: We use semantic search instead of predefined categories. The content itself determines what the memory is about.
+- **No Tags**: Initially skipped for simplicity. Can be added later if needed.
+- **Simple Source**: Just tracking whether user explicitly asked to remember ('explicit') or it was extracted from conversation ('extracted').
+- **Conflict Tracking**: Built-in supersession support for handling outdated information.
 
 ## Relationships
 
 ### Memory Supersession Chain
 
-Memories can form chains when information is updated:
+Memories can form chains when information is updated over time:
 
 ```mermaid
 graph LR
-    M1[Memory: Liam struggles with calculus<br/>created: 2024-01-01] 
-    M2[Memory: Liam understands derivatives<br/>created: 2024-01-15]
-    M3[Memory: Liam mastered integration<br/>created: 2024-02-01]
+    M1[Memory: User lives in Seattle<br/>created: 2024-01-01] 
+    M2[Memory: User moved to Austin<br/>created: 2024-06-15]
     
     M1 -->|superseded_by| M2
-    M2 -->|superseded_by| M3
     M2 -->|supersedes| M1
-    M3 -->|supersedes| M2
 ```
+
+When retrieving memories, superseded memories are automatically filtered out by default.
 
 ## Storage Schema
 
-### Vector Database Collections
+### Vector Database Collection
 
 ```javascript
-// Primary collection for all memories
 {
   collection: "memories",
   schema: {
-    id: "string",
-    embedding: "vector[1536]",  // Assuming OpenAI ada-002
+    // Main fields
+    id: "string",                   // Primary key
+    content: "string",              // The actual memory text
+    embedding: "vector[1536]",      // OpenAI ada-002 embeddings
+    
+    // Metadata stored separately
     metadata: {
-      content: "string",
-      subject: "string",
-      category: "string",
-      tags: "string[]",
       confidence: "float",
+      source: "string",
+      supersedes: "string",
+      superseded_by: "string",
       created_at: "datetime",
-      // ... other fields
+      updated_at: "datetime", 
+      accessed_at: "datetime"
     }
-  }
-}
-
-// Index for subject-based queries
-{
-  collection: "subject_index",
-  schema: {
-    subject: "string",
-    memory_ids: "string[]"
-  }
+  },
+  
+  // Indices for performance
+  indices: [
+    { field: "id", type: "primary" },
+    { field: "embedding", type: "vector" },
+    { field: "metadata.created_at", type: "btree" },
+    { field: "metadata.superseded_by", type: "btree" }
+  ]
 }
 ```
 
@@ -129,39 +95,20 @@ graph LR
 ### Creating a Memory
 
 ```typescript
-async function createMemory(input: CreateMemoryInput): Promise<Memory> {
-  // 1. Generate ID
-  const id = generateMemoryId();
-  
-  // 2. Generate embedding
-  const embedding = await generateEmbedding(input.content);
-  
-  // 3. Check for duplicates/conflicts
-  const similar = await findSimilarMemories(embedding, 0.95);
-  if (similar.length > 0) {
-    // Handle potential duplicate
-  }
-  
-  // 4. Check for contradictions
-  const contradictions = await findContradictions(input);
-  if (contradictions.length > 0) {
-    // Mark old memories as superseded
-  }
-  
-  // 5. Store in vector DB
+async function createMemory(
+  content: string, 
+  confidence: number = 1.0,
+  source: 'explicit' | 'extracted' = 'extracted'
+): Promise<Memory> {
   const memory: Memory = {
-    id,
-    content: input.content,
-    embedding,
-    subject: normalizeSubject(input.subject),
-    category: input.category,
-    tags: input.tags || [],
-    confidence: input.confidence || 1.0,
-    source: input.source || MemorySource.EXPLICIT,
+    id: generateMemoryId(),           // e.g., "mem_" + nanoid()
+    content,
+    embedding: await generateEmbedding(content),
+    confidence,
+    source,
     created_at: new Date(),
     updated_at: new Date(),
-    accessed_at: new Date(),
-    version: 1
+    accessed_at: new Date()
   };
   
   await vectorDB.add(memory);
@@ -172,32 +119,55 @@ async function createMemory(input: CreateMemoryInput): Promise<Memory> {
 ### Searching Memories
 
 ```typescript
-async function searchMemories(query: SearchQuery): Promise<Memory[]> {
-  // 1. Generate query embedding
-  const queryEmbedding = await generateEmbedding(query.text);
+async function searchMemories(
+  query: string, 
+  limit: number = 5
+): Promise<Memory[]> {
+  // Generate query embedding
+  const queryEmbedding = await generateEmbedding(query);
   
-  // 2. Vector similarity search
-  let results = await vectorDB.search({
+  // Vector similarity search
+  const results = await vectorDB.search({
     vector: queryEmbedding,
-    limit: query.limit || 10,
-    threshold: query.threshold || 0.7
+    limit: limit * 2,  // Get extra to account for filtering
+    threshold: 0.7
   });
   
-  // 3. Apply filters
-  if (query.subject) {
-    results = results.filter(m => m.subject === query.subject);
+  // Filter out superseded memories
+  const active = results.filter(m => !m.superseded_by);
+  
+  // Update access time
+  const now = new Date();
+  for (const memory of active) {
+    await vectorDB.update(memory.id, { 
+      accessed_at: now 
+    });
   }
-  if (query.category) {
-    results = results.filter(m => m.category === query.category);
-  }
   
-  // 4. Filter out superseded memories
-  results = results.filter(m => !m.superseded_by);
+  return active.slice(0, limit);
+}
+```
+
+### Superseding Memories
+
+```typescript
+async function supersedeMemory(
+  oldMemoryId: string, 
+  newMemoryId: string
+): Promise<void> {
+  const now = new Date();
   
-  // 5. Update access time
-  await updateAccessTime(results.map(m => m.id));
+  // Update the old memory
+  await vectorDB.update(oldMemoryId, { 
+    superseded_by: newMemoryId,
+    updated_at: now
+  });
   
-  return results;
+  // Update the new memory
+  await vectorDB.update(newMemoryId, { 
+    supersedes: oldMemoryId,
+    updated_at: now
+  });
 }
 ```
 
@@ -206,79 +176,50 @@ async function searchMemories(query: SearchQuery): Promise<Memory[]> {
 ```mermaid
 stateDiagram-v2
     [*] --> Created: Store Memory
-    Created --> Active: Validated
-    Active --> Updated: New Information
-    Updated --> Active: Merge/Replace
-    Active --> Superseded: Contradicted
-    Superseded --> Archived: After Time
-    Active --> Expired: Time Limit
-    Expired --> Deleted: Cleanup
-    Archived --> [*]
-    Deleted --> [*]
-```
-
-## Privacy & Multi-tenancy Considerations
-
-### Namespace Isolation
-
-For future multi-user support:
-
-```typescript
-interface NamespacedMemory extends Memory {
-  namespace: string;  // User ID or workspace ID
-  shared: boolean;    // Can be accessed across namespaces
-  permissions: {
-    read: string[];   // Who can read
-    write: string[];  // Who can modify
-  };
-}
-```
-
-### Data Retention Policies
-
-```typescript
-interface RetentionPolicy {
-  namespace: string;
-  rules: {
-    category: MemoryCategory;
-    retention_days: number;
-    archive_after_days?: number;
-  }[];
-}
+    Created --> Active: Ready for Use
+    Active --> Active: Retrieved/Accessed
+    Active --> Superseded: Newer Information
+    Superseded --> Hidden: From Search Results
+    Hidden --> [*]: Optional Cleanup
 ```
 
 ## Performance Considerations
 
 ### Indexing Strategy
-- Primary index on `id`
-- Vector index on `embedding`
-- Secondary indices on `subject`, `category`, `created_at`
-- Composite index on `namespace` + `subject` for multi-tenant queries
+- Primary index on `id` for direct lookups
+- Vector index on `embedding` for similarity search
+- Index on `superseded_by` for filtering active memories
+- Index on `created_at` for recency queries
 
-### Caching Strategy
-- Cache frequently accessed memories in Redis/memory
-- Cache embedding generation for common phrases
-- Cache search results for repeated queries within session
+### Optimization Tips
+- Batch embedding generation when possible
+- Cache frequently accessed memories
+- Consider pagination for large result sets
+- Implement connection pooling for database
 
-## Migration Path
+## Future Extensions
 
-As the system evolves, memories need versioning:
+Potential fields to add later if needed:
 
 ```typescript
-interface MemoryMigration {
-  from_version: number;
-  to_version: number;
-  migrate: (memory: any) => Memory;
+interface FutureMemoryExtensions {
+  // Multi-tenancy
+  namespace?: string;              // User or workspace ID
+  
+  // Additional metadata
+  tags?: string[];                 // Flexible categorization
+  importance?: number;             // Priority/importance score
+  
+  // Advanced features
+  expires_at?: Date;               // Auto-expiry for temporal facts
+  related_memories?: string[];    // Explicit relationships
+  
+  // Analytics
+  access_count?: number;           // How often accessed
+  last_modified_by?: string;      // Who/what modified it
 }
-
-// Example migration adding a new field
-const migration_v1_to_v2: MemoryMigration = {
-  from_version: 1,
-  to_version: 2,
-  migrate: (old) => ({
-    ...old,
-    importance: old.confidence, // New field with default
-    version: 2
-  })
-};
 ```
+
+## Privacy & Security Notes
+- Consider encryption at rest for sensitive memory content
+- Implement audit logging for all memory operations
