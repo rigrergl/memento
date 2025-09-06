@@ -125,21 +125,6 @@ TypeScript MCP server with Python microservice for embeddings.
 - Both ecosystems have mature vector database clients
 - OAuth implementation complexity is similar in both languages
 
-## Distribution Strategy
-
-```bash
-# Power Users (Local)
-pip install memento-mcp
-memento-mcp serve --local
-
-# Docker Users
-docker run memento/mcp-server
-
-# Web Users (Future)
-# Hosted service with OAuth
-https://api.memento.ai
-```
-
 ## Alternatives Considered but Rejected
 
 - **Go SDK**: High performance but lacks ML ecosystem
