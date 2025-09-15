@@ -11,21 +11,33 @@ Transform stateless LLM interactions into continuous, personalized relationships
 ```mermaid
 graph TB
     User[User] -->|Conversation| Client[LLM Client<br/>Claude/GPT/etc]
-    Client -->|MCP Protocol| MCP[Memento MCP Server]
+    Client -->|MCP Protocol| MCP[Memento MCP Server<br/>FastMCP + OAuth]
     
-    MCP -->|Store/Query| VectorDB[(Vector Database)]
-    MCP -->|Embed| Embedder[Embedding Model]
+    MCP -->|Memory Operations| LC[LangChain Orchestration Layer]
+    
+    LC -->|Graph Operations| Neo4j[(Neo4j<br/>Graph + Vector Store)]
+    LC -->|Entity Extraction| LLM[LLM]
+    
+    MCP -->|User Management| MongoDB[(MongoDB<br/>User Auth & Preferences)]
     
     subgraph "Memento Core"
         MCP
-        VectorDB
-        Embedder
+        LC
+        LLM
+    end
+    
+    subgraph "Data Layer"
+        Neo4j
+        MongoDB
     end
     
     style User fill:#e1f5fe
     style Client fill:#fff3e0
     style MCP fill:#f3e5f5
-    style VectorDB fill:#e8f5e9
+    style LC fill:#e8f5e9
+    style Neo4j fill:#fff9c4
+    style MongoDB fill:#ffebee
+    style LLM fill:#e0f2f1
 ```
 
 ## 🚀 Quick Start
