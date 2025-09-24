@@ -11,33 +11,35 @@ Transform stateless LLM interactions into continuous, personalized relationships
 ```mermaid
 graph TB
     User[User] -->|Conversation| Client[LLM Client<br/>Claude/GPT/etc]
-    Client -->|MCP Protocol| MCP[Memento MCP Server<br/>FastMCP + OAuth]
+    Client -->|MCP Protocol| MCP[Memento MCP Server<br/>Python + FastMCP]
+    Client -.->|OAuth Flow| Auth0[Auth0<br/>OAuth Provider]
+    Auth0 -.->|JWT Token| Client
     
     MCP -->|Memory Operations| LC[LangChain Orchestration Layer]
+    MCP -->|User Data| Neo4j[(Neo4j<br/>Graph + Vector Store)]
     
-    LC -->|Graph Operations| Neo4j[(Neo4j<br/>Graph + Vector Store)]
-    LC -->|Entity Extraction| LLM[LLM]
-    
-    MCP -->|User Management| MongoDB[(MongoDB<br/>User Auth & Preferences)]
+    LC -->|Store/Query Memories| Neo4j
+    LC -->|Intelligent Memory Operations| LLM[LLM<br/>Local/API]
+    LC -->|Generate| Embedder[Embeddings<br/>Local/API]
     
     subgraph "Memento Core"
         MCP
         LC
         LLM
+        Embedder
+        Neo4j
     end
     
-    subgraph "Data Layer"
-        Neo4j
-        MongoDB
-    end
+    Auth0
     
     style User fill:#e1f5fe
     style Client fill:#fff3e0
     style MCP fill:#f3e5f5
     style LC fill:#e8f5e9
     style Neo4j fill:#fff9c4
-    style MongoDB fill:#ffebee
+    style Auth0 fill:#ffebee
     style LLM fill:#e0f2f1
+    style Embedder fill:#fff9c4
 ```
 
 ## 🚀 Quick Start
@@ -80,10 +82,13 @@ memento/
 
 ## 🛠️ Technology Stack
 
-- **MCP Server**: Node.js + TypeScript
-- **Vector Database**: ChromaDB (swappable)
-- **Embeddings**: OpenAI Ada-002 (swappable)
-- **Testing**: Jest + MCP test harness
+- **MCP Server**: Python + FastMCP
+- **Orchestration**: LangChain (memory operations, entity extraction)
+- **Database**: Neo4j (graph + vectors)
+- **LLM**: Local (Ollama/llama.cpp) or API (OpenAI/Anthropic)
+- **Embeddings**: Local transformers or API (OpenAI/Anthropic)
+- **Auth (Cloud)**: Auth0 OAuth 2.1
+- **Testing**: Python pytest + MCP test harness
 
 ## 📝 License
 
