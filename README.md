@@ -57,11 +57,21 @@ TODO
 ```
 memento/
 ├── Documentation/          # Project documentation
+│   ├── tasks/             # Task tracking (in-progress, todo, done)
+│   └── ADR/               # Architecture Decision Records
 ├── src/
-│   ├── mcp-server/        # MCP server implementation
-│   ├── memory-store/      # Vector DB abstraction
+│   ├── models/            # Shared domain models (Memory, User)
+│   ├── embeddings/        # Embedding provider implementations
+│   ├── llms/              # LLM provider implementations
+│   ├── memory/            # Memory service layer
+│   ├── graph/             # Neo4j repository layer
+│   ├── mcp/               # MCP server implementation
 │   └── utils/             # Shared utilities
-└── tests/                 # Test suites
+└── tests/
+    └── unit/              # Unit test suites
+        ├── test_embeddings/
+        ├── test_memory/
+        └── test_graph/
 ```
 
 ## 🎮 Core Features
