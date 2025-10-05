@@ -2,6 +2,24 @@
 
 **Epic:** MCP Integration (Phase 2)
 
+## Design Rationale
+
+**Leveraging Client LLM for Intelligence:**
+We're designing the MCP tool specification to leverage the client's LLM (e.g., Claude, GPT-4) for intelligent operations rather than building a server-side LLM. This approach keeps Memento simple and cost-effective while utilizing the powerful reasoning capabilities already available in the MCP client.
+
+**Key responsibilities delegated to client LLM:**
+- **Knowledge graph construction**: Client extracts entities and relationships from memories and passes structured data to the server
+- **Intelligent graph traversal**: Client decides which graph relationships to explore based on the user's query
+- **Conflict detection**: Client reasons about similar memories and decides when to call `supersede_memory`
+
+**Server responsibilities (simple storage and retrieval):**
+- Store memories with embeddings and graph structure
+- Provide vector search for semantic similarity
+- Expose graph navigation primitives for client-directed exploration
+- Execute supersession and relationship management
+
+This approach will be our first attempt. If we encounter bottlenecks or limitations, we can add server-side LLM capabilities later.
+
 ## Description
 
 Implement the four MCP tools that expose memory operations to LLM clients. These tools define the interface that Claude and other LLMs will use to interact with the Memento memory system.

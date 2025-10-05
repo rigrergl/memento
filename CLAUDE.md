@@ -59,6 +59,18 @@ Expected future commands:
 - **Interface Segregation**: Separate interfaces for embedding vs LLM providers
 - **Plugin Architecture**: Swappable providers for different AI services
 
+## Development Philosophy
+
+**YAGNI (You Ain't Gonna Need It)**: Don't build features, methods, or abstractions until they're actually needed. If we don't have a concrete use case right now, don't implement it. This keeps the codebase lean and focused.
+
+**KISS (Keep It Simple, Stupid)**: Always choose the simplest solution that works. Avoid over-engineering, premature optimization, and unnecessary complexity. Simple code is easier to understand, test, and maintain.
+
+When reviewing architecture or planning tasks:
+- Remove unused methods from interfaces
+- Avoid building "might need later" features
+- Choose simple implementations over clever ones
+- Refactor to add complexity only when requirements demand it
+
 ## Documentation Structure
 
 - `Documentation/mcp-tool-specification.md`: Complete MCP tool API specifications

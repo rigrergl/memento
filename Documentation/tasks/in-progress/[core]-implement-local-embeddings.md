@@ -10,7 +10,6 @@ Implement a local embeddings provider using sentence-transformers library that c
 
 Create a production-ready local embedding provider that:
 - Generates consistent embeddings for text input
-- Supports batch processing for efficiency
 - Uses the all-MiniLM-L6-v2 model (384 dimensions, fast)
 - Implements the IEmbeddingProvider interface
 
@@ -19,7 +18,6 @@ Create a production-ready local embedding provider that:
 - [ ] `src/embeddings/local.py` implements `LocalEmbeddingProvider` class
 - [ ] Inherits from `IEmbeddingProvider` base class in `src/embeddings/base.py`
 - [ ] Implements `generate_embedding(text: str) -> list[float]` method
-- [ ] Implements `generate_batch(texts: list[str]) -> list[list[float]]` method
 - [ ] Implements `dimension() -> int` property
 - [ ] Handles model loading and caching properly
 - [ ] Unit tests in `tests/test_embeddings/test_local_embeddings.py` with >80% coverage
@@ -37,7 +35,6 @@ Create a production-ready local embedding provider that:
 
 **Key Implementation Points:**
 - Load model once and cache in memory
-- Support both single and batch operations
 - Normalize embeddings to unit length for cosine similarity
 - Handle edge cases (empty strings, very long text)
 
