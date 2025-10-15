@@ -71,6 +71,19 @@ When reviewing architecture or planning tasks:
 - Choose simple implementations over clever ones
 - Refactor to add complexity only when requirements demand it
 
+## Working with Time-Sensitive Information
+
+**IMPORTANT**: Always look up time-sensitive information online rather than relying on training data. Information that changes over time should be verified using web search or fetch tools.
+
+**Always verify online:**
+- Package versions (e.g., `pydantic-settings`, `sentence-transformers`)
+- Framework APIs and breaking changes
+- Best practices and current conventions
+- Release dates and deprecation notices
+- Security advisories and CVEs
+
+**Example**: When adding a dependency, search PyPI for the latest version and release date rather than using potentially outdated training data.
+
 ## Documentation Structure
 
 - `Documentation/mcp-tool-specification.md`: Complete MCP tool API specifications

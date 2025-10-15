@@ -64,18 +64,31 @@ classDiagram
         +validate_token(token: str) bool
     }
     
-    class EmbeddingFactory {
-        +create_provider(config: Config) IEmbeddingProvider
-        -providers: dict~str, Type~
+    class Config {
+        <<PydanticSettings>>
+        +embedding_provider: str
+        +embedding_model: str
+        +embedding_cache_dir: str
+        +neo4j_uri: str
+        +neo4j_user: str
+        +neo4j_password: str
     }
 
-    class LocalTransformerEmbedding {
+    class Factory {
+        <<FactoryPattern>>
+        +create_embedder(config: Config) IEmbeddingProvider
+    }
+
+    class LocalEmbeddingProvider {
         -model_name: str
+        -cache_dir: str
         -model: SentenceTransformer
+        -_dimension: int
+        +__init__(model_name: str, cache_dir: str)
         +generate_embedding(text: str) List~float~
         +dimension() int
     }
-    
+
     MCPServer --> MCPTools
     MCPServer --> GraphMemoryService
     MCPServer --> AuthService
@@ -88,7 +101,9 @@ classDiagram
     Neo4jRepository --> Memory
     Neo4jRepository --> User
 
-    EmbeddingFactory ..> IEmbeddingProvider : creates
+    Config --> Factory : provides config
+    Factory ..> IEmbeddingProvider : creates
+    Factory --> LocalEmbeddingProvider : instantiates dynamically
 
-    IEmbeddingProvider <|.. LocalTransformerEmbedding : implements
+    IEmbeddingProvider <|.. LocalEmbeddingProvider : implements
 ```
