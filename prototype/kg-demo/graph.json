@@ -1,0 +1,477 @@
+{
+  "mementos": [
+    {
+      "id": "m001",
+      "content": "User is working on a project called Memento",
+      "timestamp": "2025-11-16T00:01:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m002",
+      "content": "Memento is an MCP server that provides persistent memory for LLMs",
+      "timestamp": "2025-11-16T00:01:30Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m003",
+      "content": "The project uses Python with FastMCP framework",
+      "timestamp": "2025-11-16T00:02:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m004",
+      "content": "The project uses Neo4j for graph-based vector storage",
+      "timestamp": "2025-11-16T00:02:15Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m005",
+      "content": "User is working in an isolated cloud environment",
+      "timestamp": "2025-11-16T00:03:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m006",
+      "content": "Current branch is claude/knowledge-graph-prototype-016woGkvRjndwTdvaeEGhz73",
+      "timestamp": "2025-11-16T00:03:15Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m007",
+      "content": "User cares about isolation from other agents",
+      "timestamp": "2025-11-16T00:04:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m008",
+      "content": "The project has two main tasks in progress: local embeddings and basic demo",
+      "timestamp": "2025-11-16T00:04:30Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m009",
+      "content": "User wants to see knowledge organized with hierarchy, entities, and relationships",
+      "timestamp": "2025-11-16T00:05:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m010",
+      "content": "User values the WOW factor in visualizations",
+      "timestamp": "2025-11-16T00:05:15Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m011",
+      "content": "The project uses sentence-transformers for local embeddings",
+      "timestamp": "2025-11-16T00:05:30Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m012",
+      "content": "User distinguishes between raw 'Mementos' and structured knowledge",
+      "timestamp": "2025-11-16T00:05:45Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m013",
+      "content": "The architecture leverages client LLM instead of server-side LLM (ADR-006)",
+      "timestamp": "2025-11-16T00:06:00Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m014",
+      "content": "Neo4j supports both graph relationships and vector embeddings in single database",
+      "timestamp": "2025-11-16T00:06:15Z",
+      "source": "conversation"
+    },
+    {
+      "id": "m015",
+      "content": "User asked about worktrees and operating system - they are technical",
+      "timestamp": "2025-11-16T00:06:30Z",
+      "source": "conversation"
+    }
+  ],
+  "entities": [
+    {
+      "id": "e_user",
+      "name": "User",
+      "type": "Person",
+      "properties": {
+        "role": "developer",
+        "expertise": "technical"
+      },
+      "scale": "domain",
+      "extracted_from": [
+        "m001",
+        "m007",
+        "m009",
+        "m015"
+      ]
+    },
+    {
+      "id": "e_ai_memory",
+      "name": "AI Memory Systems",
+      "type": "Concept",
+      "properties": {
+        "domain": "artificial_intelligence",
+        "subdomain": "memory"
+      },
+      "scale": "domain",
+      "extracted_from": [
+        "m002",
+        "m012"
+      ]
+    },
+    {
+      "id": "e_memento",
+      "name": "Memento Project",
+      "type": "Project",
+      "properties": {
+        "status": "in_development",
+        "purpose": "LLM persistent memory"
+      },
+      "scale": "system",
+      "extracted_from": [
+        "m001",
+        "m002",
+        "m003"
+      ]
+    },
+    {
+      "id": "e_neo4j",
+      "name": "Neo4j",
+      "type": "Technology",
+      "properties": {
+        "category": "database",
+        "features": "graph+vector"
+      },
+      "scale": "component",
+      "extracted_from": [
+        "m004",
+        "m014"
+      ]
+    },
+    {
+      "id": "e_fastmcp",
+      "name": "FastMCP",
+      "type": "Technology",
+      "properties": {
+        "category": "framework",
+        "language": "python"
+      },
+      "scale": "component",
+      "extracted_from": [
+        "m003"
+      ]
+    },
+    {
+      "id": "e_mcp",
+      "name": "Model Context Protocol",
+      "type": "Technology",
+      "properties": {
+        "category": "protocol",
+        "purpose": "LLM tool integration"
+      },
+      "scale": "component",
+      "extracted_from": [
+        "m002"
+      ]
+    },
+    {
+      "id": "e_embeddings",
+      "name": "Local Embeddings",
+      "type": "Technology",
+      "properties": {
+        "provider": "sentence-transformers",
+        "model": "all-MiniLM-L6-v2"
+      },
+      "scale": "component",
+      "extracted_from": [
+        "m008",
+        "m011"
+      ]
+    },
+    {
+      "id": "e_branch",
+      "name": "Feature Branch",
+      "type": "Concept",
+      "properties": {
+        "name": "claude/knowledge-graph-prototype-016woGkvRjndwTdvaeEGhz73"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m006"
+      ]
+    },
+    {
+      "id": "e_isolation",
+      "name": "Agent Isolation",
+      "type": "Concept",
+      "properties": {
+        "importance": "high",
+        "reason": "prevent interference"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m005",
+        "m007"
+      ]
+    },
+    {
+      "id": "e_task_embeddings",
+      "name": "Implement Local Embeddings",
+      "type": "Task",
+      "properties": {
+        "status": "in_progress",
+        "epic": "core_components"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m008"
+      ]
+    },
+    {
+      "id": "e_task_demo",
+      "name": "Basic Demo",
+      "type": "Task",
+      "properties": {
+        "status": "in_progress",
+        "epic": "core_components"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m008"
+      ]
+    },
+    {
+      "id": "e_adr006",
+      "name": "ADR-006: Leverage Client LLM",
+      "type": "Concept",
+      "properties": {
+        "decision": "use_client_llm",
+        "principle": "YAGNI"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m013"
+      ]
+    },
+    {
+      "id": "e_pref_hierarchy",
+      "name": "Preference: Hierarchical Organization",
+      "type": "Preference",
+      "properties": {
+        "valued": "hierarchy, entities, relationships"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m009"
+      ]
+    },
+    {
+      "id": "e_pref_wow",
+      "name": "Preference: WOW Factor",
+      "type": "Preference",
+      "properties": {
+        "valued": "impressive visualizations"
+      },
+      "scale": "atomic",
+      "extracted_from": [
+        "m010"
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "source": "e_user",
+      "target": "e_memento",
+      "type": "WORKS_ON",
+      "properties": {
+        "role": "creator"
+      },
+      "extracted_from": [
+        "m001"
+      ]
+    },
+    {
+      "source": "e_user",
+      "target": "e_isolation",
+      "type": "VALUES",
+      "properties": {
+        "priority": "high"
+      },
+      "extracted_from": [
+        "m007"
+      ]
+    },
+    {
+      "source": "e_user",
+      "target": "e_pref_hierarchy",
+      "type": "HAS_PREFERENCE",
+      "properties": {},
+      "extracted_from": [
+        "m009"
+      ]
+    },
+    {
+      "source": "e_user",
+      "target": "e_pref_wow",
+      "type": "HAS_PREFERENCE",
+      "properties": {},
+      "extracted_from": [
+        "m010"
+      ]
+    },
+    {
+      "source": "e_memento",
+      "target": "e_ai_memory",
+      "type": "BELONGS_TO_DOMAIN",
+      "properties": {},
+      "extracted_from": [
+        "m002"
+      ]
+    },
+    {
+      "source": "e_memento",
+      "target": "e_mcp",
+      "type": "IMPLEMENTS",
+      "properties": {
+        "role": "server"
+      },
+      "extracted_from": [
+        "m002"
+      ]
+    },
+    {
+      "source": "e_memento",
+      "target": "e_fastmcp",
+      "type": "USES",
+      "properties": {
+        "purpose": "framework"
+      },
+      "extracted_from": [
+        "m003"
+      ]
+    },
+    {
+      "source": "e_memento",
+      "target": "e_neo4j",
+      "type": "USES",
+      "properties": {
+        "purpose": "storage"
+      },
+      "extracted_from": [
+        "m004"
+      ]
+    },
+    {
+      "source": "e_memento",
+      "target": "e_embeddings",
+      "type": "USES",
+      "properties": {
+        "purpose": "semantic_search"
+      },
+      "extracted_from": [
+        "m011"
+      ]
+    },
+    {
+      "source": "e_neo4j",
+      "target": "e_embeddings",
+      "type": "STORES",
+      "properties": {
+        "data_type": "vector_embeddings"
+      },
+      "extracted_from": [
+        "m014"
+      ]
+    },
+    {
+      "source": "e_adr006",
+      "target": "e_memento",
+      "type": "GUIDES",
+      "properties": {
+        "aspect": "architecture"
+      },
+      "extracted_from": [
+        "m013"
+      ]
+    },
+    {
+      "source": "e_task_embeddings",
+      "target": "e_memento",
+      "type": "CONTRIBUTES_TO",
+      "properties": {
+        "phase": "1"
+      },
+      "extracted_from": [
+        "m008"
+      ]
+    },
+    {
+      "source": "e_task_demo",
+      "target": "e_memento",
+      "type": "CONTRIBUTES_TO",
+      "properties": {
+        "phase": "1"
+      },
+      "extracted_from": [
+        "m008"
+      ]
+    },
+    {
+      "source": "e_task_embeddings",
+      "target": "e_embeddings",
+      "type": "IMPLEMENTS",
+      "properties": {},
+      "extracted_from": [
+        "m008",
+        "m011"
+      ]
+    },
+    {
+      "source": "e_branch",
+      "target": "e_isolation",
+      "type": "PROVIDES",
+      "properties": {
+        "mechanism": "git_branch"
+      },
+      "extracted_from": [
+        "m006",
+        "m007"
+      ]
+    },
+    {
+      "source": "e_user",
+      "target": "e_branch",
+      "type": "WORKS_IN",
+      "properties": {
+        "environment": "cloud"
+      },
+      "extracted_from": [
+        "m005",
+        "m006"
+      ]
+    }
+  ],
+  "hierarchy": {},
+  "statistics": {
+    "total_mementos": 15,
+    "total_entities": 14,
+    "total_relationships": 16,
+    "entities_by_type": {
+      "Person": 1,
+      "Concept": 4,
+      "Project": 1,
+      "Technology": 4,
+      "Task": 2,
+      "Preference": 2
+    },
+    "entities_by_scale": {
+      "domain": 2,
+      "system": 1,
+      "component": 4,
+      "atomic": 7
+    }
+  }
+}
