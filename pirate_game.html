@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏴‍☠️ Pirate Adventure</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: #333;
+        }
+
+        #game-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        h1 {
+            text-align: center;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        #status {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+
+        #output {
+            background: #fafafa;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 200px;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            line-height: 1.8;
+        }
+
+        .button-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-align: left;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #667eea;
+            border-radius: 10px;
+            font-size: 1em;
+            margin-bottom: 10px;
+        }
+
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <h1>🏴‍☠️ Pirate Adventure ✨</h1>
+
+        <div id="status" class="hidden">
+            <div id="status-text"></div>
+        </div>
+
+        <div id="output"></div>
+
+        <div id="input-area" class="hidden">
+            <input type="text" id="text-input" placeholder="Enter your answer...">
+            <button onclick="submitInput()">Submit</button>
+        </div>
+
+        <div id="buttons" class="button-grid"></div>
+    </div>
+
+    <script>
+        class PirateGame {
+            constructor() {
+                this.playerName = "";
+                this.health = 100;
+                this.gold = 50;
+                this.reputation = 0;
+                this.shipCondition = 100;
+                this.inventory = ["✨ shiny cutlass", "🧭 magical compass", "🍹 tropical smoothie"];
+                this.location = "port";
+                this.treasuresFound = 0;
+                this.petParrot = this.getRandomParrotName();
+                this.islands = {
+                    "rainbow_island": {visited: false, treasure: true, name: "Rainbow Island"},
+                    "parrot_cove": {visited: false, treasure: true, name: "Parrot Cove"},
+                    "mermaid_bay": {visited: false, treasure: true, name: "Mermaid Bay"},
+                    "coconut_beach": {visited: false, treasure: false, name: "Coconut Beach"},
+                    "sparkle_lagoon": {visited: false, treasure: true, name: "Sparkle Lagoon"}
+                };
+            }
+
+            getRandomParrotName() {
+                const names = ["Pickles", "Captain Squawk", "Rainbow", "Mango", "Biscuit", "Crackers"];
+                return names[Math.floor(Math.random() * names.length)];
+            }
+
+            updateStatus() {
+                const statusEl = document.getElementById('status');
+                const statusText = document.getElementById('status-text');
+                statusEl.classList.remove('hidden');
+                statusText.innerHTML = `
+🎩 Captain ${this.playerName} & 🦜 ${this.petParrot}<br>
+❤️ ${this.health}/100 | 💰 ${this.gold} gold | ⭐ ${this.reputation} fame | ⛵ ${this.shipCondition}% | 🏆 ${this.treasuresFound}/5 treasures
+                `;
+            }
+
+            print(text) {
+                const output = document.getElementById('output');
+                output.textContent += text + '\n';
+                output.scrollTop = output.scrollHeight;
+            }
+
+            clear() {
+                document.getElementById('output').textContent = '';
+            }
+
+            showButtons(buttons) {
+                const buttonsEl = document.getElementById('buttons');
+                buttonsEl.innerHTML = '';
+                buttons.forEach(btn => {
+                    const button = document.createElement('button');
+                    button.textContent = btn.text;
+                    button.onclick = btn.action;
+                    buttonsEl.appendChild(button);
+                });
+            }
+
+            async getInput(prompt) {
+                return new Promise((resolve) => {
+                    this.print(prompt);
+                    const inputArea = document.getElementById('input-area');
+                    const textInput = document.getElementById('text-input');
+                    inputArea.classList.remove('hidden');
+                    textInput.focus();
+
+                    window.submitInput = () => {
+                        const value = textInput.value.trim();
+                        textInput.value = '';
+                        inputArea.classList.add('hidden');
+                        this.print(`> ${value}\n`);
+                        resolve(value);
+                    };
+
+                    textInput.onkeypress = (e) => {
+                        if (e.key === 'Enter') {
+                            window.submitInput();
+                        }
+                    };
+                });
+            }
+
+            start() {
+                this.clear();
+                this.print(`
+🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊
+   ⛵️
+🐠  ~  ~  ~  ~  🐟
+   🏴‍☠️ PIRATE ADVENTURE 🏴‍☠️
+🐟  ~  ~  ~  ~  🐠
+      🐚
+🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊
+
+✨ Welcome aboard, future treasure hunter! ✨
+
+You've just inherited a cozy little ship and a very chatty parrot!
+Your mission: Find 5 sparkly treasures hidden across the friendliest
+seas you've ever sailed! 🗺️💎
+`);
+                this.askName();
+            }
+
+            async askName() {
+                const name = await this.getInput("\nWhat's your name, Captain?");
+                this.playerName = name || "Stardust";
+                this.print(`\n🎉 Ahoy, Captain ${this.playerName}!`);
+                this.print(`🦜 Your parrot ${this.petParrot} squawks: 'Adventure time! SQUAWK!'`);
+                this.print(`\nYour journey begins... ⛵✨\n`);
+                this.updateStatus();
+                setTimeout(() => this.mainMenu(), 1000);
+            }
+
+            mainMenu() {
+                this.clear();
+                this.updateStatus();
+                this.print(`📍 You're docked at SUNNY PORT ☀️\n`);
+                this.print(`🦜 ${this.petParrot}: 'What's the plan, Captain?'\n`);
+
+                this.showButtons([
+                    {text: "🗺️  Set sail to an island!", action: () => this.sailMenu()},
+                    {text: "🏪 Browse the marketplace", action: () => this.market()},
+                    {text: "🍹 Relax at the tiki bar", action: () => this.tavern()},
+                    {text: "🔧 Fix up the ship", action: () => this.repairShip()},
+                    {text: "📊 Check your stats", action: () => this.showStats()},
+                    {text: "🌙 End adventure for now", action: () => this.quitGame()}
+                ]);
+            }
+
+            sailMenu() {
+                this.clear();
+                this.updateStatus();
+                this.print("🗺️  ISLAND MAP\n\nAvailable destinations:\n");
+
+                const buttons = [];
+                Object.entries(this.islands).forEach(([key, island]) => {
+                    const visited = island.visited ? "✓" : " ";
+                    const treasure = island.treasure && !island.visited ? "💎" : "  ";
+                    buttons.push({
+                        text: `[${visited}] ${island.name} ${treasure}`,
+                        action: () => this.sailTo(key)
+                    });
+                });
+                buttons.push({text: "🔙 Return to port", action: () => this.mainMenu()});
+
+                this.showButtons(buttons);
+            }
+
+            sailTo(islandKey) {
+                this.clear();
+                this.updateStatus();
+                this.print(`\n⛵ Setting sail for ${this.islands[islandKey].name}...\n`);
+
+                // Random sea event
+                if (Math.random() < 0.4) {
+                    this.randomSeaEvent();
+                }
+
+                this.shipCondition -= Math.floor(Math.random() * 10) + 5;
+                this.location = islandKey;
+                this.print(`\nYou've arrived at the island!`);
+
+                setTimeout(() => this.exploreIsland(islandKey), 1500);
+            }
+
+            randomSeaEvent() {
+                const events = [
+                    {type: "dolphins", msg: "🐬 A pod of dolphins plays alongside your ship!"},
+                    {type: "whale", msg: "🐋 A friendly whale says hello!"},
+                    {type: "mermaid", msg: "🧜‍♀️ A mermaid waves from the distance!"},
+                    {type: "rainbow", msg: "🌈 A beautiful rainbow appears!"}
+                ];
+
+                const event = events[Math.floor(Math.random() * events.length)];
+                this.print(`\n${event.msg}`);
+                this.print(`🦜 ${this.petParrot} squawks excitedly!`);
+
+                if (event.type === "dolphins") {
+                    const gold = Math.floor(Math.random() * 16) + 10;
+                    this.gold += gold;
+                    this.reputation += 3;
+                    this.print(`The dolphins lead you to floating treasure! +${gold} gold 💰`);
+                } else if (event.type === "rainbow") {
+                    const gold = Math.floor(Math.random() * 16) + 15;
+                    this.gold += gold;
+                    this.print(`You find a pot of gold at the rainbow's end! +${gold} gold 🌟`);
+                }
+            }
+
+            exploreIsland(islandKey) {
+                const island = this.islands[islandKey];
+                this.clear();
+                this.updateStatus();
+                this.print(`🏝️  ${island.name}\n`);
+
+                if (!island.visited) {
+                    this.print(`You step onto the shores of ${island.name}...\n`);
+
+                    if (island.treasure) {
+                        this.findTreasure(island);
+                    } else {
+                        this.print("You explore the island but find nothing of value.");
+                        this.showButtons([{text: "⛵ Return to ship", action: () => {
+                            this.location = "port";
+                            this.mainMenu();
+                        }}]);
+                    }
+
+                    island.visited = true;
+                } else {
+                    this.print("You've already explored this island thoroughly.");
+                    this.showButtons([{text: "⛵ Return to ship", action: () => {
+                        this.location = "port";
+                        this.mainMenu();
+                    }}]);
+                }
+            }
+
+            findTreasure(island) {
+                this.print(`🗺️  Your magical compass is glowing...`);
+                this.print(`🦜 ${this.petParrot}: 'I sense something sparkly! SQUAWK!'\n`);
+
+                const challenges = [
+                    "🧩 You find a colorful puzzle lock on a treasure chest!",
+                    "🦉 A wise owl asks you a riddle!",
+                    "🎵 Some friendly crabs want to see your dance moves!",
+                    "🎶 Musical shells play a melody you must repeat!"
+                ];
+
+                const challenge = challenges[Math.floor(Math.random() * challenges.length)];
+                this.print(challenge);
+                this.print("\n✨ ⭐ 💎 YOU FOUND A TREASURE! 💎 ⭐ ✨\n");
+
+                const treasureValue = Math.floor(Math.random() * 201) + 100;
+                this.gold += treasureValue;
+                this.reputation += 10;
+                this.treasuresFound++;
+
+                const items = ["✨ golden starfish", "💎 rainbow pearl", "🌟 magic telescope", "🐚 singing seashell", "👑 coral crown"];
+                const item = items[Math.floor(Math.random() * items.length)];
+                this.inventory.push(item);
+
+                this.print(`💰 You gained ${treasureValue} gold!`);
+                this.print(`🎁 You found a ${item}!`);
+                this.print(`🦜 ${this.petParrot}: 'We're rich! SQUAWK! Well, richer!'`);
+
+                if (this.treasuresFound >= 5) {
+                    setTimeout(() => this.winGame(), 2000);
+                } else {
+                    this.showButtons([{text: "⛵ Return to ship", action: () => {
+                        this.location = "port";
+                        this.mainMenu();
+                    }}]);
+                }
+            }
+
+            market() {
+                this.clear();
+                this.updateStatus();
+                this.print("🏪 ✨ TREASURE MARKET ✨ 🏪\n");
+                this.print("A friendly merchant greets you with a smile!\n");
+
+                const items = [
+                    {name: "🍎 Delicious Fruit Basket", price: 40, type: "health"},
+                    {name: "⭐ Sparkly Sword Upgrade", price: 80, type: "weapon"},
+                    {name: "🍀 Lucky Four-Leaf Clover", price: 60, type: "charm"},
+                    {name: "🍹 Tropical Smoothie", price: 20, type: "smoothie"}
+                ];
+
+                const buttons = items.map(item => ({
+                    text: `${item.name} - ${item.price} gold`,
+                    action: () => this.buyItem(item)
+                }));
+
+                buttons.push({text: "👋 Wave goodbye", action: () => this.mainMenu()});
+                this.showButtons(buttons);
+            }
+
+            buyItem(item) {
+                if (this.gold >= item.price) {
+                    this.gold -= item.price;
+                    this.inventory.push(item.name);
+
+                    if (item.type === "health") {
+                        this.health = Math.min(100, this.health + 30);
+                        this.print(`Yum! You feel energized! +30 health 💚`);
+                    } else {
+                        this.print(`You happily purchased ${item.name}! ✨`);
+                    }
+                    this.print("The merchant thanks you and gives you a friendly wink!");
+                } else {
+                    this.print("The merchant smiles: 'Come back when you have more gold!'");
+                }
+
+                setTimeout(() => this.market(), 2000);
+            }
+
+            tavern() {
+                this.clear();
+                this.updateStatus();
+                this.print("🍹 🌺 THE HAPPY PARROT TIKI BAR 🌺 🍹\n");
+                this.print("You enter the cheerful tiki bar with its colorful decorations...");
+                this.print(`🦜 ${this.petParrot}: 'I love this place! SQUAWK!'\n`);
+
+                const stories = [
+                    "A friendly sailor shares tales of Rainbow Island's beautiful sunsets!",
+                    "You hear about a pod of dolphins that guides lost ships to safety!",
+                    "An old captain tells you about the singing mermaids of Sparkle Lagoon!"
+                ];
+
+                this.print(stories[Math.floor(Math.random() * stories.length)]);
+                this.print("Everyone raises their coconut drinks in a toast! 🥥");
+                this.reputation += 2;
+
+                this.showButtons([{text: "✨ Head back outside", action: () => this.mainMenu()}]);
+            }
+
+            repairShip() {
+                this.clear();
+                this.updateStatus();
+                this.print("🔧 ⚓ SHIP REPAIR DOCK ⚓ 🔧\n");
+                this.print("A friendly shipwright waves!");
+
+                const damage = 100 - this.shipCondition;
+                const cost = damage * 2;
+
+                this.print(`Your ship is at ${this.shipCondition}% condition`);
+                this.print(`Full repair will cost ${cost} gold\n`);
+
+                if (this.gold >= cost && damage > 0) {
+                    this.showButtons([
+                        {text: "✨ Fix up your ship", action: () => {
+                            this.gold -= cost;
+                            this.shipCondition = 100;
+                            this.print("⚒️ Hammer hammer hammer... ✨");
+                            this.print("🎉 Your ship looks amazing! Good as new!");
+                            this.print("The shipwright gives you a thumbs up! 👍");
+                            setTimeout(() => this.mainMenu(), 2000);
+                        }},
+                        {text: "🔙 Maybe later", action: () => this.mainMenu()}
+                    ]);
+                } else {
+                    if (damage === 0) {
+                        this.print("Your ship is already in perfect condition!");
+                    } else {
+                        this.print("The shipwright smiles: 'Come back when you have more gold!'");
+                    }
+                    this.showButtons([{text: "🔙 Go back", action: () => this.mainMenu()}]);
+                }
+            }
+
+            showStats() {
+                this.clear();
+                this.updateStatus();
+                this.print("📊 STATISTICS\n");
+                this.print(`Captain: ${this.playerName}`);
+                this.print(`Health: ${this.health}/100`);
+                this.print(`Gold: ${this.gold}`);
+                this.print(`Reputation: ${this.reputation}`);
+                this.print(`Ship Condition: ${this.shipCondition}%`);
+                this.print(`Treasures Found: ${this.treasuresFound}/5`);
+                this.print(`\nInventory (${this.inventory.length} items):`);
+                this.inventory.forEach(item => this.print(`  - ${item}`));
+
+                this.showButtons([{text: "🔙 Back to port", action: () => this.mainMenu()}]);
+            }
+
+            winGame() {
+                this.clear();
+                this.print("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨\n");
+                this.print("   🎉🎊 YOU WON! 🎊🎉\n");
+                this.print("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨\n");
+                this.print(`🎩 Captain ${this.playerName}, you did it!`);
+                this.print("🏆 You've found all 5 legendary treasures!");
+                this.print(`\n💰 Final treasure: ${this.gold} gold`);
+                this.print(`⭐ Fame level: ${this.reputation}`);
+                this.print(`🦜 ${this.petParrot}: 'We're LEGENDS now! SQUAWK!'\n`);
+                this.print("You're now the most beloved treasure hunter in the seas!");
+                this.print("Stories of your kindness and adventures spread far and wide!");
+                this.print("\n✨ THANK YOU FOR PLAYING! ✨");
+
+                this.showButtons([{text: "🎮 Play Again", action: () => {
+                    game = new PirateGame();
+                    game.start();
+                }}]);
+            }
+
+            quitGame() {
+                this.clear();
+                this.print("🌅 Thanks for sailing with us, Captain!");
+                this.print(`🦜 ${this.petParrot}: 'Come back soon! SQUAWK!'`);
+                this.print("⛵ Fair winds and following seas! ✨");
+
+                this.showButtons([{text: "🎮 Start New Game", action: () => {
+                    game = new PirateGame();
+                    game.start();
+                }}]);
+            }
+        }
+
+        let game = new PirateGame();
+        game.start();
+    </script>
+</body>
+</html>
