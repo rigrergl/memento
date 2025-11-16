@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Knowledge Graph: Multi-Scale Memory Organization</title>
+    <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        #header {
+            text-align: center;
+            padding: 30px;
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+        }
+        h1 {
+            margin: 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        .subtitle {
+            font-size: 1.2em;
+            margin-top: 10px;
+            opacity: 0.9;
+        }
+        #container {
+            display: flex;
+            height: calc(100vh - 180px);
+            margin: 20px;
+            gap: 20px;
+        }
+        #mynetwork {
+            flex: 3;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        #sidebar {
+            flex: 1;
+            background: rgba(255,255,255,0.95);
+            border-radius: 15px;
+            padding: 20px;
+            color: #333;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+        .info-section {
+            margin-bottom: 20px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 10px;
+            border-left: 4px solid #667eea;
+        }
+        .info-section h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+        .stat:last-child {
+            border-bottom: none;
+        }
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 0.9em;
+        }
+        .legend-color {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #333;
+        }
+        #selected-info {
+            background: rgba(118, 75, 162, 0.1);
+            border-left-color: #764ba2;
+        }
+        .mementos-list {
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+        }
+        .memento-item {
+            padding: 5px;
+            margin: 5px 0;
+            background: white;
+            border-radius: 3px;
+            border-left: 3px solid #667eea;
+        }
+    </style>
+</head>
+<body>
+    <div id="header">
+        <h1>🧠 Knowledge Graph Demo</h1>
+        <div class="subtitle">Multi-Scale Memory Organization: Mementos → Entities → Relationships</div>
+    </div>
+
+    <div id="container">
+        <div id="mynetwork"></div>
+        <div id="sidebar">
+            <div class="info-section">
+                <h3>📊 Graph Statistics</h3>
+                <div class="stat"><span>Raw Mementos:</span><strong id="stat-mementos">15</strong></div>
+                <div class="stat"><span>Entities:</span><strong id="stat-entities">14</strong></div>
+                <div class="stat"><span>Relationships:</span><strong id="stat-relationships">16</strong></div>
+                <div class="stat"><span>Scales:</span><strong>4 levels</strong></div>
+            </div>
+
+            <div class="info-section">
+                <h3>🎨 Entity Types</h3>
+                <div class="legend">
+                    <div class="legend-item"><div class="legend-color" style="background: #e1f5fe;"></div>Person</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #f3e5f5;"></div>Project</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #fff3e0;"></div>Technology</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #e8f5e9;"></div>Concept</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #fff9c4;"></div>Task</div>
+                    <div class="legend-item"><div class="legend-color" style="background: #fce4ec;"></div>Preference</div>
+                </div>
+            </div>
+
+            <div class="info-section">
+                <h3>📏 Hierarchy Scales</h3>
+                <div style="font-size: 0.9em; line-height: 1.6;">
+                    <div><strong>Domain:</strong> Highest-level concepts (User, AI Memory)</div>
+                    <div><strong>System:</strong> Major projects (Memento)</div>
+                    <div><strong>Component:</strong> Technologies (Neo4j, FastMCP)</div>
+                    <div><strong>Atomic:</strong> Specific details (Tasks, Preferences)</div>
+                </div>
+            </div>
+
+            <div class="info-section" id="selected-info">
+                <h3>🎯 Selected Node</h3>
+                <div id="node-details">Click a node to see details...</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="text/javascript">
+        // Graph data
+        const entities = {
+            "e_user": {name: "User", type: "Person", scale: "domain", mementos: ["m001", "m007", "m009", "m015"]},
+            "e_ai_memory": {name: "AI Memory Systems", type: "Concept", scale: "domain", mementos: ["m002", "m012"]},
+            "e_memento": {name: "Memento Project", type: "Project", scale: "system", mementos: ["m001", "m002", "m003"]},
+            "e_neo4j": {name: "Neo4j", type: "Technology", scale: "component", mementos: ["m004", "m014"]},
+            "e_fastmcp": {name: "FastMCP", type: "Technology", scale: "component", mementos: ["m003"]},
+            "e_mcp": {name: "Model Context Protocol", type: "Technology", scale: "component", mementos: ["m002"]},
+            "e_embeddings": {name: "Local Embeddings", type: "Technology", scale: "component", mementos: ["m008", "m011"]},
+            "e_branch": {name: "Feature Branch", type: "Concept", scale: "atomic", mementos: ["m006"]},
+            "e_isolation": {name: "Agent Isolation", type: "Concept", scale: "atomic", mementos: ["m005", "m007"]},
+            "e_task_embeddings": {name: "Implement Local Embeddings", type: "Task", scale: "atomic", mementos: ["m008"]},
+            "e_task_demo": {name: "Basic Demo", type: "Task", scale: "atomic", mementos: ["m008"]},
+            "e_adr006": {name: "ADR-006: Client LLM", type: "Concept", scale: "atomic", mementos: ["m013"]},
+            "e_pref_hierarchy": {name: "Pref: Hierarchy", type: "Preference", scale: "atomic", mementos: ["m009"]},
+            "e_pref_wow": {name: "Pref: WOW Factor", type: "Preference", scale: "atomic", mementos: ["m010"]}
+        };
+
+        const mementosData = {
+            "m001": "User is working on a project called Memento",
+            "m002": "Memento is an MCP server that provides persistent memory for LLMs",
+            "m003": "The project uses Python with FastMCP framework",
+            "m004": "The project uses Neo4j for graph-based vector storage",
+            "m005": "User is working in an isolated cloud environment",
+            "m006": "Current branch is claude/knowledge-graph-prototype-016woGkvRjndwTdvaeEGhz73",
+            "m007": "User cares about isolation from other agents",
+            "m008": "The project has two main tasks in progress: local embeddings and basic demo",
+            "m009": "User wants to see knowledge organized with hierarchy, entities, and relationships",
+            "m010": "User values the WOW factor in visualizations",
+            "m011": "The project uses sentence-transformers for local embeddings",
+            "m012": "User distinguishes between raw 'Mementos' and structured knowledge",
+            "m013": "The architecture leverages client LLM instead of server-side LLM (ADR-006)",
+            "m014": "Neo4j supports both graph relationships and vector embeddings in single database",
+            "m015": "User asked about worktrees and operating system - they are technical"
+        };
+
+        const relationships = [
+            {from: "e_user", to: "e_memento", label: "WORKS_ON"},
+            {from: "e_user", to: "e_isolation", label: "VALUES"},
+            {from: "e_user", to: "e_pref_hierarchy", label: "HAS_PREFERENCE"},
+            {from: "e_user", to: "e_pref_wow", label: "HAS_PREFERENCE"},
+            {from: "e_memento", to: "e_ai_memory", label: "BELONGS_TO"},
+            {from: "e_memento", to: "e_mcp", label: "IMPLEMENTS"},
+            {from: "e_memento", to: "e_fastmcp", label: "USES"},
+            {from: "e_memento", to: "e_neo4j", label: "USES"},
+            {from: "e_memento", to: "e_embeddings", label: "USES"},
+            {from: "e_neo4j", to: "e_embeddings", label: "STORES"},
+            {from: "e_adr006", to: "e_memento", label: "GUIDES"},
+            {from: "e_task_embeddings", to: "e_memento", label: "CONTRIBUTES_TO"},
+            {from: "e_task_demo", to: "e_memento", label: "CONTRIBUTES_TO"},
+            {from: "e_task_embeddings", to: "e_embeddings", label: "IMPLEMENTS"},
+            {from: "e_branch", to: "e_isolation", label: "PROVIDES"},
+            {from: "e_user", to: "e_branch", label: "WORKS_IN"}
+        ];
+
+        // Color mapping
+        const colors = {
+            "Person": "#e1f5fe",
+            "Project": "#f3e5f5",
+            "Technology": "#fff3e0",
+            "Concept": "#e8f5e9",
+            "Task": "#fff9c4",
+            "Preference": "#fce4ec"
+        };
+
+        // Size by scale
+        const sizes = {
+            "domain": 40,
+            "system": 30,
+            "component": 25,
+            "atomic": 20
+        };
+
+        // Create nodes
+        const nodes = new vis.DataSet(
+            Object.entries(entities).map(([id, data]) => ({
+                id: id,
+                label: data.name,
+                color: {
+                    background: colors[data.type],
+                    border: '#2b2b2b',
+                    highlight: {
+                        background: '#667eea',
+                        border: '#2b2b2b'
+                    }
+                },
+                size: sizes[data.scale],
+                font: {
+                    size: 14,
+                    color: '#2b2b2b',
+                    face: 'Segoe UI'
+                },
+                borderWidth: 2,
+                title: `${data.type} | ${data.scale} scale | ${data.mementos.length} mementos`
+            }))
+        );
+
+        // Create edges
+        const edges = new vis.DataSet(
+            relationships.map((rel, idx) => ({
+                id: idx,
+                from: rel.from,
+                to: rel.to,
+                label: rel.label,
+                arrows: 'to',
+                color: {
+                    color: '#999',
+                    highlight: '#667eea'
+                },
+                font: {
+                    size: 11,
+                    align: 'middle',
+                    color: '#666'
+                },
+                smooth: {
+                    type: 'curvedCW',
+                    roundness: 0.2
+                }
+            }))
+        );
+
+        // Create network
+        const container = document.getElementById('mynetwork');
+        const data = {nodes: nodes, edges: edges};
+        const options = {
+            physics: {
+                enabled: true,
+                barnesHut: {
+                    gravitationalConstant: -8000,
+                    centralGravity: 0.3,
+                    springLength: 200,
+                    springConstant: 0.04,
+                    damping: 0.09,
+                    avoidOverlap: 0.5
+                },
+                stabilization: {
+                    iterations: 200
+                }
+            },
+            interaction: {
+                hover: true,
+                tooltipDelay: 100,
+                navigationButtons: true,
+                keyboard: true
+            }
+        };
+
+        const network = new vis.Network(container, data, options);
+
+        // Node selection handler
+        network.on("selectNode", function(params) {
+            const nodeId = params.nodes[0];
+            const entity = entities[nodeId];
+
+            const detailsHtml = `
+                <div style="line-height: 1.6;">
+                    <h4 style="margin-top: 0; color: #764ba2;">${entity.name}</h4>
+                    <div><strong>Type:</strong> ${entity.type}</div>
+                    <div><strong>Scale:</strong> ${entity.scale}</div>
+                    <div><strong>Extracted from:</strong> ${entity.mementos.length} mementos</div>
+                    <div class="mementos-list">
+                        ${entity.mementos.map(m =>
+                            `<div class="memento-item"><strong>${m}:</strong> ${mementosData[m]}</div>`
+                        ).join('')}
+                    </div>
+                </div>
+            `;
+            document.getElementById('node-details').innerHTML = detailsHtml;
+        });
+
+        network.on("deselectNode", function() {
+            document.getElementById('node-details').innerHTML = "Click a node to see details...";
+        });
+
+        console.log("🧠 Knowledge Graph loaded!");
+        console.log("📊 Stats:", {
+            entities: Object.keys(entities).length,
+            relationships: relationships.length,
+            mementos: Object.keys(mementosData).length
+        });
+    </script>
+</body>
+</html>

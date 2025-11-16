@@ -1,0 +1,58 @@
+graph TB
+
+    %% === RAW MEMENTOS (Foundation Layer) ===
+    %% DOMAIN SCALE
+    e_user["User"]
+    e_ai_memory["AI Memory Systems"]
+
+    %% SYSTEM SCALE
+    e_memento["Memento Project"]
+
+    %% COMPONENT SCALE
+    e_neo4j["Neo4j"]
+    e_fastmcp["FastMCP"]
+    e_mcp["Model Context Protocol"]
+    e_embeddings["Local Embeddings"]
+
+    %% ATOMIC SCALE
+    e_branch["Feature Branch"]
+    e_isolation["Agent Isolation"]
+    e_task_embeddings["Implement Local Embeddings"]
+    e_task_demo["Basic Demo"]
+    e_adr006["ADR-006: Leverage Client LLM"]
+    e_pref_hierarchy["Preference: Hierarchical Organization"]
+    e_pref_wow["Preference: WOW Factor"]
+
+    %% === RELATIONSHIPS ===
+    e_user -->|WORKS ON| e_memento
+    e_user -->|VALUES| e_isolation
+    e_user -->|HAS PREFERENCE| e_pref_hierarchy
+    e_user -->|HAS PREFERENCE| e_pref_wow
+    e_memento -->|BELONGS TO DOMAIN| e_ai_memory
+    e_memento -->|IMPLEMENTS| e_mcp
+    e_memento -->|USES| e_fastmcp
+    e_memento -->|USES| e_neo4j
+    e_memento -->|USES| e_embeddings
+    e_neo4j -->|STORES| e_embeddings
+    e_adr006 -->|GUIDES| e_memento
+    e_task_embeddings -->|CONTRIBUTES TO| e_memento
+    e_task_demo -->|CONTRIBUTES TO| e_memento
+    e_task_embeddings -->|IMPLEMENTS| e_embeddings
+    e_branch -->|PROVIDES| e_isolation
+    e_user -->|WORKS IN| e_branch
+
+    %% === STYLING ===
+    style e_user fill:#e1f5fe
+    style e_ai_memory fill:#e8f5e9
+    style e_memento fill:#f3e5f5
+    style e_neo4j fill:#fff3e0
+    style e_fastmcp fill:#fff3e0
+    style e_mcp fill:#fff3e0
+    style e_embeddings fill:#fff3e0
+    style e_branch fill:#e8f5e9
+    style e_isolation fill:#e8f5e9
+    style e_task_embeddings fill:#fff9c4
+    style e_task_demo fill:#fff9c4
+    style e_adr006 fill:#e8f5e9
+    style e_pref_hierarchy fill:#fce4ec
+    style e_pref_wow fill:#fce4ec
