@@ -12,89 +12,356 @@
         }
 
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Comic Sans MS', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(to bottom, #87CEEB 0%, #4682B4 100%);
             min-height: 100vh;
-            padding: 20px;
-            color: #333;
+            overflow-x: hidden;
         }
 
         #game-container {
-            max-width: 600px;
+            max-width: 800px;
             margin: 0 auto;
-            background: white;
+            padding: 20px;
+        }
+
+        /* Visual Scene Area */
+        #scene {
+            background: linear-gradient(to bottom, #87CEEB 0%, #B0E0E6 50%, #4682B4 100%);
             border-radius: 20px;
             padding: 30px;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+            min-height: 400px;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
         }
 
-        h1 {
+        /* Clouds */
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.7;
+            animation: float 20s infinite ease-in-out;
+        }
+
+        .cloud::before, .cloud::after {
+            content: '';
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+        }
+
+        .cloud1 {
+            width: 100px;
+            height: 40px;
+            top: 20px;
+            left: 10%;
+        }
+
+        .cloud1::before {
+            width: 50px;
+            height: 50px;
+            top: -25px;
+            left: 10px;
+        }
+
+        .cloud1::after {
+            width: 60px;
+            height: 40px;
+            top: -15px;
+            right: 10px;
+        }
+
+        .cloud2 {
+            width: 80px;
+            height: 35px;
+            top: 60px;
+            right: 15%;
+            animation-delay: -5s;
+        }
+
+        .cloud2::before {
+            width: 40px;
+            height: 40px;
+            top: -20px;
+            left: 10px;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* Ship Display */
+        #ship-display {
+            position: relative;
             text-align: center;
-            color: #667eea;
-            margin-bottom: 20px;
-            font-size: 2em;
+            margin: 40px auto;
+            z-index: 10;
         }
 
-        #status {
-            background: #f0f0f0;
-            padding: 15px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            font-size: 0.9em;
-            line-height: 1.6;
+        #ship-visual {
+            font-size: 80px;
+            animation: bob 3s infinite ease-in-out;
+            display: inline-block;
+            filter: drop-shadow(0 5px 10px rgba(0,0,0,0.3));
         }
 
-        #output {
-            background: #fafafa;
+        @keyframes bob {
+            0%, 100% { transform: translateY(0px) rotate(-2deg); }
+            50% { transform: translateY(-15px) rotate(2deg); }
+        }
+
+        #parrot-visual {
+            font-size: 40px;
+            position: absolute;
+            top: -20px;
+            right: 30%;
+            animation: fly 2s infinite ease-in-out;
+        }
+
+        @keyframes fly {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        /* Stats Display */
+        #stats-display {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
             padding: 20px;
-            border-radius: 10px;
             margin-bottom: 20px;
-            min-height: 200px;
-            max-height: 400px;
-            overflow-y: auto;
-            white-space: pre-wrap;
-            line-height: 1.8;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        }
+
+        .stat-row {
+            display: flex;
+            align-items: center;
+            margin-bottom: 12px;
+            gap: 10px;
+        }
+
+        .stat-label {
+            font-weight: bold;
+            min-width: 100px;
+            font-size: 18px;
+        }
+
+        .stat-bar {
+            flex: 1;
+            height: 25px;
+            background: #e0e0e0;
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .stat-fill {
+            height: 100%;
+            transition: width 0.5s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+        }
+
+        .health-fill { background: linear-gradient(90deg, #ff6b6b, #ff8787); }
+        .ship-fill { background: linear-gradient(90deg, #51cf66, #69db7c); }
+        .gold-stat {
+            background: linear-gradient(135deg, #ffd700, #ffed4e);
+            color: #333;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            min-width: 100px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .treasure-stat {
+            background: linear-gradient(135deg, #9775fa, #b197fc);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 12px;
+            font-size: 20px;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        /* Island Map */
+        #island-map {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .island-card {
+            background: linear-gradient(135deg, #fff5f5, #ffe3e3);
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.3s, box-shadow 0.3s;
+            border: 3px solid transparent;
+            position: relative;
+        }
+
+        .island-card:hover {
+            transform: translateY(-5px) scale(1.05);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            border-color: #ff6b6b;
+        }
+
+        .island-card.visited {
+            background: linear-gradient(135deg, #e7f5ff, #d0ebff);
+            opacity: 0.7;
+        }
+
+        .island-icon {
+            font-size: 50px;
+            margin-bottom: 10px;
+        }
+
+        .island-name {
+            font-weight: bold;
+            font-size: 14px;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .island-treasure {
+            font-size: 30px;
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            animation: sparkle 1.5s infinite;
+        }
+
+        @keyframes sparkle {
+            0%, 100% { transform: scale(1) rotate(0deg); opacity: 1; }
+            50% { transform: scale(1.2) rotate(180deg); opacity: 0.7; }
+        }
+
+        /* Control Panel */
+        #control-panel {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.2);
         }
 
         .button-grid {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 10px;
-            margin-bottom: 20px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
         }
 
         button {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border: none;
-            padding: 15px;
-            border-radius: 10px;
-            font-size: 1em;
+            padding: 15px 20px;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: bold;
             cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-            text-align: left;
+            transition: all 0.3s;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
         button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(0,0,0,0.3);
         }
 
         button:active {
             transform: translateY(0);
         }
 
+        /* Message Box */
+        #message-box {
+            background: linear-gradient(135deg, #fff9db, #ffec99);
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            line-height: 1.6;
+            min-height: 60px;
+            border: 3px solid #ffd43b;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+        }
+
+        #message-box.celebration {
+            background: linear-gradient(135deg, #d0bfff, #b197fc);
+            border-color: #9775fa;
+            animation: pulse 0.5s;
+            color: white;
+            font-weight: bold;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        /* Treasure Chest */
+        .treasure-chest {
+            font-size: 60px;
+            display: inline-block;
+            animation: bounce 1s infinite;
+        }
+
+        @keyframes bounce {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
         input {
             width: 100%;
             padding: 15px;
-            border: 2px solid #667eea;
+            border: 3px solid #667eea;
             border-radius: 10px;
-            font-size: 1em;
+            font-size: 16px;
             margin-bottom: 10px;
+            font-family: inherit;
         }
 
         .hidden {
             display: none;
+        }
+
+        /* Title */
+        h1 {
+            text-align: center;
+            color: white;
+            font-size: 2.5em;
+            text-shadow: 3px 3px 6px rgba(0,0,0,0.3);
+            margin-bottom: 20px;
+        }
+
+        /* Waves at bottom */
+        .wave {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 100px;
+            background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 100"><path fill="%234682B4" fill-opacity="0.3" d="M0,50 Q300,80 600,50 T1200,50 L1200,100 L0,100 Z"></path></svg>');
+            background-size: cover;
+            animation: wave 10s linear infinite;
+        }
+
+        @keyframes wave {
+            0% { background-position-x: 0; }
+            100% { background-position-x: 1200px; }
         }
     </style>
 </head>
@@ -102,18 +369,63 @@
     <div id="game-container">
         <h1>🏴‍☠️ Pirate Adventure ✨</h1>
 
-        <div id="status" class="hidden">
-            <div id="status-text"></div>
+        <!-- Stats Display -->
+        <div id="stats-display" class="hidden">
+            <div style="text-align: center; margin-bottom: 15px;">
+                <strong id="captain-name" style="font-size: 24px;">Captain Name</strong>
+            </div>
+
+            <div class="stat-row">
+                <span class="stat-label">❤️ Health</span>
+                <div class="stat-bar">
+                    <div class="stat-fill health-fill" id="health-bar" style="width: 100%">100</div>
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <span class="stat-label">⛵ Ship</span>
+                <div class="stat-bar">
+                    <div class="stat-fill ship-fill" id="ship-bar" style="width: 100%">100%</div>
+                </div>
+            </div>
+
+            <div class="stat-row">
+                <span class="stat-label">💰 Gold</span>
+                <div class="gold-stat" id="gold-display">50</div>
+            </div>
+
+            <div class="stat-row">
+                <span class="stat-label">🏆 Treasures</span>
+                <div class="treasure-stat" id="treasure-display">0/5</div>
+            </div>
         </div>
 
-        <div id="output"></div>
+        <!-- Visual Scene -->
+        <div id="scene">
+            <div class="cloud cloud1"></div>
+            <div class="cloud cloud2"></div>
 
-        <div id="input-area" class="hidden">
-            <input type="text" id="text-input" placeholder="Enter your answer...">
-            <button onclick="submitInput()">Submit</button>
+            <div id="ship-display">
+                <div id="parrot-visual">🦜</div>
+                <div id="ship-visual">⛵</div>
+            </div>
+
+            <div id="scene-content"></div>
+
+            <div class="wave"></div>
         </div>
 
-        <div id="buttons" class="button-grid"></div>
+        <!-- Message Box -->
+        <div id="control-panel">
+            <div id="message-box">Welcome aboard! 🌊</div>
+
+            <div id="input-area" class="hidden">
+                <input type="text" id="text-input" placeholder="Type here...">
+                <button onclick="game.submitInput()">Submit</button>
+            </div>
+
+            <div id="buttons" class="button-grid"></div>
+        </div>
     </div>
 
     <script>
@@ -124,16 +436,15 @@
                 this.gold = 50;
                 this.reputation = 0;
                 this.shipCondition = 100;
-                this.inventory = ["✨ shiny cutlass", "🧭 magical compass", "🍹 tropical smoothie"];
-                this.location = "port";
                 this.treasuresFound = 0;
                 this.petParrot = this.getRandomParrotName();
+                this.location = "port";
                 this.islands = {
-                    "rainbow_island": {visited: false, treasure: true, name: "Rainbow Island"},
-                    "parrot_cove": {visited: false, treasure: true, name: "Parrot Cove"},
-                    "mermaid_bay": {visited: false, treasure: true, name: "Mermaid Bay"},
-                    "coconut_beach": {visited: false, treasure: false, name: "Coconut Beach"},
-                    "sparkle_lagoon": {visited: false, treasure: true, name: "Sparkle Lagoon"}
+                    rainbow_island: {visited: false, treasure: true, name: "Rainbow Island", icon: "🌈"},
+                    parrot_cove: {visited: false, treasure: true, name: "Parrot Cove", icon: "🦜"},
+                    mermaid_bay: {visited: false, treasure: true, name: "Mermaid Bay", icon: "🧜‍♀️"},
+                    coconut_beach: {visited: false, treasure: false, name: "Coconut Beach", icon: "🥥"},
+                    sparkle_lagoon: {visited: false, treasure: true, name: "Sparkle Lagoon", icon: "✨"}
                 };
             }
 
@@ -142,24 +453,31 @@
                 return names[Math.floor(Math.random() * names.length)];
             }
 
-            updateStatus() {
-                const statusEl = document.getElementById('status');
-                const statusText = document.getElementById('status-text');
-                statusEl.classList.remove('hidden');
-                statusText.innerHTML = `
-🎩 Captain ${this.playerName} & 🦜 ${this.petParrot}<br>
-❤️ ${this.health}/100 | 💰 ${this.gold} gold | ⭐ ${this.reputation} fame | ⛵ ${this.shipCondition}% | 🏆 ${this.treasuresFound}/5 treasures
-                `;
+            updateStats() {
+                document.getElementById('stats-display').classList.remove('hidden');
+                document.getElementById('captain-name').textContent = `🎩 Captain ${this.playerName} & 🦜 ${this.petParrot}`;
+
+                const healthBar = document.getElementById('health-bar');
+                healthBar.style.width = this.health + '%';
+                healthBar.textContent = this.health;
+
+                const shipBar = document.getElementById('ship-bar');
+                shipBar.style.width = this.shipCondition + '%';
+                shipBar.textContent = this.shipCondition + '%';
+
+                document.getElementById('gold-display').textContent = this.gold;
+                document.getElementById('treasure-display').textContent = `${this.treasuresFound}/5`;
             }
 
-            print(text) {
-                const output = document.getElementById('output');
-                output.textContent += text + '\n';
-                output.scrollTop = output.scrollHeight;
-            }
-
-            clear() {
-                document.getElementById('output').textContent = '';
+            showMessage(text, celebration = false) {
+                const messageBox = document.getElementById('message-box');
+                messageBox.textContent = text;
+                if (celebration) {
+                    messageBox.classList.add('celebration');
+                    setTimeout(() => messageBox.classList.remove('celebration'), 2000);
+                } else {
+                    messageBox.classList.remove('celebration');
+                }
             }
 
             showButtons(buttons) {
@@ -175,342 +493,334 @@
 
             async getInput(prompt) {
                 return new Promise((resolve) => {
-                    this.print(prompt);
+                    this.showMessage(prompt);
                     const inputArea = document.getElementById('input-area');
                     const textInput = document.getElementById('text-input');
                     inputArea.classList.remove('hidden');
                     textInput.focus();
 
-                    window.submitInput = () => {
+                    this.submitInput = () => {
                         const value = textInput.value.trim();
                         textInput.value = '';
                         inputArea.classList.add('hidden');
-                        this.print(`> ${value}\n`);
                         resolve(value);
                     };
 
                     textInput.onkeypress = (e) => {
                         if (e.key === 'Enter') {
-                            window.submitInput();
+                            this.submitInput();
                         }
                     };
                 });
             }
 
+            setScene(content) {
+                document.getElementById('scene-content').innerHTML = content;
+            }
+
             start() {
-                this.clear();
-                this.print(`
-🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊
-   ⛵️
-🐠  ~  ~  ~  ~  🐟
-   🏴‍☠️ PIRATE ADVENTURE 🏴‍☠️
-🐟  ~  ~  ~  ~  🐠
-      🐚
-🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊🌊
-
-✨ Welcome aboard, future treasure hunter! ✨
-
-You've just inherited a cozy little ship and a very chatty parrot!
-Your mission: Find 5 sparkly treasures hidden across the friendliest
-seas you've ever sailed! 🗺️💎
-`);
+                this.showMessage("🌊 Welcome to Pirate Adventure! 🌊");
+                this.setScene(`
+                    <div style="text-align: center; color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-top: 50px;">
+                        <div style="font-size: 60px; margin-bottom: 20px;">🏴‍☠️</div>
+                        <p>You've inherited a cozy ship!</p>
+                        <p>Find 5 treasures across the seas! 🗺️💎</p>
+                    </div>
+                `);
                 this.askName();
             }
 
             async askName() {
-                const name = await this.getInput("\nWhat's your name, Captain?");
+                const name = await this.getInput("What's your name, Captain?");
                 this.playerName = name || "Stardust";
-                this.print(`\n🎉 Ahoy, Captain ${this.playerName}!`);
-                this.print(`🦜 Your parrot ${this.petParrot} squawks: 'Adventure time! SQUAWK!'`);
-                this.print(`\nYour journey begins... ⛵✨\n`);
-                this.updateStatus();
-                setTimeout(() => this.mainMenu(), 1000);
+                this.showMessage(`🎉 Ahoy, Captain ${this.playerName}! Your parrot ${this.petParrot} is ready! SQUAWK!`, true);
+                this.updateStats();
+                setTimeout(() => this.mainMenu(), 2000);
             }
 
             mainMenu() {
-                this.clear();
-                this.updateStatus();
-                this.print(`📍 You're docked at SUNNY PORT ☀️\n`);
-                this.print(`🦜 ${this.petParrot}: 'What's the plan, Captain?'\n`);
+                this.updateStats();
+                this.showMessage(`📍 Docked at SUNNY PORT! ${this.petParrot} asks: "What's the plan, Captain?"`);
+                this.setScene('');
 
                 this.showButtons([
-                    {text: "🗺️  Set sail to an island!", action: () => this.sailMenu()},
-                    {text: "🏪 Browse the marketplace", action: () => this.market()},
-                    {text: "🍹 Relax at the tiki bar", action: () => this.tavern()},
-                    {text: "🔧 Fix up the ship", action: () => this.repairShip()},
-                    {text: "📊 Check your stats", action: () => this.showStats()},
-                    {text: "🌙 End adventure for now", action: () => this.quitGame()}
+                    {text: "🗺️ Sail to Islands", action: () => this.showMap()},
+                    {text: "🏪 Marketplace", action: () => this.market()},
+                    {text: "🍹 Tiki Bar", action: () => this.tavern()},
+                    {text: "🔧 Repair Ship", action: () => this.repairShip()},
+                    {text: "🌙 End Adventure", action: () => this.quitGame()}
                 ]);
             }
 
-            sailMenu() {
-                this.clear();
-                this.updateStatus();
-                this.print("🗺️  ISLAND MAP\n\nAvailable destinations:\n");
+            showMap() {
+                this.showMessage("🗺️ Choose your destination!");
 
-                const buttons = [];
+                let mapHTML = '<div id="island-map">';
                 Object.entries(this.islands).forEach(([key, island]) => {
-                    const visited = island.visited ? "✓" : " ";
-                    const treasure = island.treasure && !island.visited ? "💎" : "  ";
-                    buttons.push({
-                        text: `[${visited}] ${island.name} ${treasure}`,
-                        action: () => this.sailTo(key)
-                    });
-                });
-                buttons.push({text: "🔙 Return to port", action: () => this.mainMenu()});
+                    const visitedClass = island.visited ? 'visited' : '';
+                    const treasureIcon = island.treasure && !island.visited ?
+                        `<div class="island-treasure">💎</div>` : '';
 
-                this.showButtons(buttons);
+                    mapHTML += `
+                        <div class="island-card ${visitedClass}" onclick="game.sailTo('${key}')">
+                            ${treasureIcon}
+                            <div class="island-icon">${island.icon}</div>
+                            <div class="island-name">${island.name}</div>
+                            ${island.visited ? '<div style="font-size: 12px; color: #666;">✓ Explored</div>' : ''}
+                        </div>
+                    `;
+                });
+                mapHTML += '</div>';
+
+                this.setScene(mapHTML);
+                this.showButtons([{text: "🔙 Back to Port", action: () => this.mainMenu()}]);
             }
 
             sailTo(islandKey) {
-                this.clear();
-                this.updateStatus();
-                this.print(`\n⛵ Setting sail for ${this.islands[islandKey].name}...\n`);
-
-                // Random sea event
-                if (Math.random() < 0.4) {
-                    this.randomSeaEvent();
-                }
+                const island = this.islands[islandKey];
+                this.showMessage(`⛵ Setting sail for ${island.name}!`);
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 80px;">
+                        <div style="font-size: 80px; animation: bob 2s infinite;">🌊 ⛵ 🌊</div>
+                        <p style="color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            Sailing to ${island.name}...
+                        </p>
+                    </div>
+                `);
 
                 this.shipCondition -= Math.floor(Math.random() * 10) + 5;
-                this.location = islandKey;
-                this.print(`\nYou've arrived at the island!`);
+                this.updateStats();
 
-                setTimeout(() => this.exploreIsland(islandKey), 1500);
+                setTimeout(() => {
+                    if (Math.random() < 0.4) {
+                        this.randomSeaEvent(islandKey);
+                    } else {
+                        this.exploreIsland(islandKey);
+                    }
+                }, 2000);
             }
 
-            randomSeaEvent() {
+            randomSeaEvent(nextIsland) {
                 const events = [
-                    {type: "dolphins", msg: "🐬 A pod of dolphins plays alongside your ship!"},
-                    {type: "whale", msg: "🐋 A friendly whale says hello!"},
-                    {type: "mermaid", msg: "🧜‍♀️ A mermaid waves from the distance!"},
-                    {type: "rainbow", msg: "🌈 A beautiful rainbow appears!"}
+                    {icon: "🐬", msg: "Dolphins lead you to treasure!", gold: 20},
+                    {icon: "🌈", msg: "A rainbow brings good fortune!", gold: 25},
+                    {icon: "🧜‍♀️", msg: "A mermaid waves hello!", gold: 15},
+                    {icon: "🐋", msg: "A whale sings a soothing song!", gold: 0, heal: 10}
                 ];
 
                 const event = events[Math.floor(Math.random() * events.length)];
-                this.print(`\n${event.msg}`);
-                this.print(`🦜 ${this.petParrot} squawks excitedly!`);
 
-                if (event.type === "dolphins") {
-                    const gold = Math.floor(Math.random() * 16) + 10;
-                    this.gold += gold;
-                    this.reputation += 3;
-                    this.print(`The dolphins lead you to floating treasure! +${gold} gold 💰`);
-                } else if (event.type === "rainbow") {
-                    const gold = Math.floor(Math.random() * 16) + 15;
-                    this.gold += gold;
-                    this.print(`You find a pot of gold at the rainbow's end! +${gold} gold 🌟`);
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 60px;">
+                        <div style="font-size: 100px; animation: bounce 1s infinite;">${event.icon}</div>
+                        <p style="color: white; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-top: 20px;">
+                            ${event.msg}
+                        </p>
+                    </div>
+                `);
+
+                if (event.gold) {
+                    this.gold += event.gold;
+                    this.showMessage(`${event.msg} +${event.gold} gold! 💰`, true);
+                } else if (event.heal) {
+                    this.health = Math.min(100, this.health + event.heal);
+                    this.showMessage(`${event.msg} +${event.heal} health! ❤️`, true);
                 }
+
+                this.updateStats();
+                setTimeout(() => this.exploreIsland(nextIsland), 2500);
             }
 
             exploreIsland(islandKey) {
                 const island = this.islands[islandKey];
-                this.clear();
-                this.updateStatus();
-                this.print(`🏝️  ${island.name}\n`);
 
-                if (!island.visited) {
-                    this.print(`You step onto the shores of ${island.name}...\n`);
+                if (island.visited) {
+                    this.showMessage("You've explored this island already!");
+                    this.setScene(`
+                        <div style="text-align: center; margin-top: 80px;">
+                            <div style="font-size: 80px;">${island.icon}</div>
+                            <p style="color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                                ${island.name} - Already explored
+                            </p>
+                        </div>
+                    `);
+                    this.showButtons([{text: "⛵ Return to Port", action: () => this.mainMenu()}]);
+                    return;
+                }
 
-                    if (island.treasure) {
-                        this.findTreasure(island);
-                    } else {
-                        this.print("You explore the island but find nothing of value.");
-                        this.showButtons([{text: "⛵ Return to ship", action: () => {
-                            this.location = "port";
-                            this.mainMenu();
-                        }}]);
-                    }
+                island.visited = true;
 
-                    island.visited = true;
+                if (island.treasure) {
+                    this.findTreasure(island);
                 } else {
-                    this.print("You've already explored this island thoroughly.");
-                    this.showButtons([{text: "⛵ Return to ship", action: () => {
-                        this.location = "port";
-                        this.mainMenu();
-                    }}]);
+                    this.showMessage("Beautiful island, but no treasure here!");
+                    this.setScene(`
+                        <div style="text-align: center; margin-top: 80px;">
+                            <div style="font-size: 80px;">${island.icon}</div>
+                        </div>
+                    `);
+                    this.showButtons([{text: "⛵ Return to Port", action: () => this.mainMenu()}]);
                 }
             }
 
             findTreasure(island) {
-                this.print(`🗺️  Your magical compass is glowing...`);
-                this.print(`🦜 ${this.petParrot}: 'I sense something sparkly! SQUAWK!'\n`);
-
-                const challenges = [
-                    "🧩 You find a colorful puzzle lock on a treasure chest!",
-                    "🦉 A wise owl asks you a riddle!",
-                    "🎵 Some friendly crabs want to see your dance moves!",
-                    "🎶 Musical shells play a melody you must repeat!"
-                ];
-
-                const challenge = challenges[Math.floor(Math.random() * challenges.length)];
-                this.print(challenge);
-                this.print("\n✨ ⭐ 💎 YOU FOUND A TREASURE! 💎 ⭐ ✨\n");
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 60px;">
+                        <div style="font-size: 100px;" class="treasure-chest">💎</div>
+                        <div style="font-size: 60px; margin-top: 20px;">✨ ⭐ ✨</div>
+                        <p style="color: white; font-size: 28px; font-weight: bold; text-shadow: 2px 2px 4px rgba(0,0,0,0.5); margin-top: 20px;">
+                            TREASURE FOUND!
+                        </p>
+                    </div>
+                `);
 
                 const treasureValue = Math.floor(Math.random() * 201) + 100;
                 this.gold += treasureValue;
-                this.reputation += 10;
                 this.treasuresFound++;
+                this.reputation += 10;
 
-                const items = ["✨ golden starfish", "💎 rainbow pearl", "🌟 magic telescope", "🐚 singing seashell", "👑 coral crown"];
-                const item = items[Math.floor(Math.random() * items.length)];
-                this.inventory.push(item);
-
-                this.print(`💰 You gained ${treasureValue} gold!`);
-                this.print(`🎁 You found a ${item}!`);
-                this.print(`🦜 ${this.petParrot}: 'We're rich! SQUAWK! Well, richer!'`);
+                this.showMessage(`🎉 You found treasure on ${island.name}! +${treasureValue} gold! 💰`, true);
+                this.updateStats();
 
                 if (this.treasuresFound >= 5) {
                     setTimeout(() => this.winGame(), 2000);
                 } else {
-                    this.showButtons([{text: "⛵ Return to ship", action: () => {
-                        this.location = "port";
-                        this.mainMenu();
-                    }}]);
+                    this.showButtons([{text: "⛵ Return to Port", action: () => this.mainMenu()}]);
                 }
             }
 
             market() {
-                this.clear();
-                this.updateStatus();
-                this.print("🏪 ✨ TREASURE MARKET ✨ 🏪\n");
-                this.print("A friendly merchant greets you with a smile!\n");
+                this.showMessage("🏪 Welcome to the Treasure Market!");
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 60px;">
+                        <div style="font-size: 80px;">🏪</div>
+                        <p style="color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            A friendly merchant greets you!
+                        </p>
+                    </div>
+                `);
 
-                const items = [
-                    {name: "🍎 Delicious Fruit Basket", price: 40, type: "health"},
-                    {name: "⭐ Sparkly Sword Upgrade", price: 80, type: "weapon"},
-                    {name: "🍀 Lucky Four-Leaf Clover", price: 60, type: "charm"},
-                    {name: "🍹 Tropical Smoothie", price: 20, type: "smoothie"}
+                const buttons = [
+                    {text: "🍎 Fruit Basket (40g)", action: () => this.buyItem("fruit", 40, 30)},
+                    {text: "⭐ Sword Upgrade (80g)", action: () => this.buyItem("sword", 80, 0)},
+                    {text: "🍀 Lucky Charm (60g)", action: () => this.buyItem("charm", 60, 0)},
+                    {text: "🔙 Leave", action: () => this.mainMenu()}
                 ];
-
-                const buttons = items.map(item => ({
-                    text: `${item.name} - ${item.price} gold`,
-                    action: () => this.buyItem(item)
-                }));
-
-                buttons.push({text: "👋 Wave goodbye", action: () => this.mainMenu()});
                 this.showButtons(buttons);
             }
 
-            buyItem(item) {
-                if (this.gold >= item.price) {
-                    this.gold -= item.price;
-                    this.inventory.push(item.name);
-
-                    if (item.type === "health") {
-                        this.health = Math.min(100, this.health + 30);
-                        this.print(`Yum! You feel energized! +30 health 💚`);
+            buyItem(type, cost, healthBonus) {
+                if (this.gold >= cost) {
+                    this.gold -= cost;
+                    if (healthBonus) {
+                        this.health = Math.min(100, this.health + healthBonus);
+                        this.showMessage(`Yum! You feel great! +${healthBonus} health ❤️`, true);
                     } else {
-                        this.print(`You happily purchased ${item.name}! ✨`);
+                        this.showMessage("Thanks for your purchase! ✨", true);
                     }
-                    this.print("The merchant thanks you and gives you a friendly wink!");
+                    this.updateStats();
                 } else {
-                    this.print("The merchant smiles: 'Come back when you have more gold!'");
+                    this.showMessage("Not enough gold! Come back later! 💰");
                 }
-
-                setTimeout(() => this.market(), 2000);
+                setTimeout(() => this.market(), 1500);
             }
 
             tavern() {
-                this.clear();
-                this.updateStatus();
-                this.print("🍹 🌺 THE HAPPY PARROT TIKI BAR 🌺 🍹\n");
-                this.print("You enter the cheerful tiki bar with its colorful decorations...");
-                this.print(`🦜 ${this.petParrot}: 'I love this place! SQUAWK!'\n`);
+                this.showMessage("🍹 Welcome to The Happy Parrot Tiki Bar!");
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 60px;">
+                        <div style="font-size: 80px;">🍹🌺</div>
+                        <p style="color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            ${this.petParrot}: "I love this place! SQUAWK!"
+                        </p>
+                    </div>
+                `);
 
-                const stories = [
-                    "A friendly sailor shares tales of Rainbow Island's beautiful sunsets!",
-                    "You hear about a pod of dolphins that guides lost ships to safety!",
-                    "An old captain tells you about the singing mermaids of Sparkle Lagoon!"
+                const events = [
+                    () => {
+                        this.reputation += 5;
+                        this.showMessage("🎤 You sing karaoke! The crowd loves it! +5 fame ⭐", true);
+                    },
+                    () => {
+                        this.health = Math.min(100, this.health + 15);
+                        this.showMessage("🛏️ You relax in a hammock! +15 health ❤️", true);
+                    },
+                    () => {
+                        this.gold += 20;
+                        this.showMessage("🎲 You win a friendly game! +20 gold 💰", true);
+                    }
                 ];
 
-                this.print(stories[Math.floor(Math.random() * stories.length)]);
-                this.print("Everyone raises their coconut drinks in a toast! 🥥");
-                this.reputation += 2;
+                events[Math.floor(Math.random() * events.length)]();
+                this.updateStats();
 
-                this.showButtons([{text: "✨ Head back outside", action: () => this.mainMenu()}]);
+                setTimeout(() => {
+                    this.showButtons([{text: "🔙 Back to Port", action: () => this.mainMenu()}]);
+                }, 2000);
             }
 
             repairShip() {
-                this.clear();
-                this.updateStatus();
-                this.print("🔧 ⚓ SHIP REPAIR DOCK ⚓ 🔧\n");
-                this.print("A friendly shipwright waves!");
-
                 const damage = 100 - this.shipCondition;
                 const cost = damage * 2;
 
-                this.print(`Your ship is at ${this.shipCondition}% condition`);
-                this.print(`Full repair will cost ${cost} gold\n`);
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 60px;">
+                        <div style="font-size: 80px;">🔧⚓</div>
+                        <p style="color: white; font-size: 20px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            Ship Condition: ${this.shipCondition}%<br>
+                            Repair Cost: ${cost} gold
+                        </p>
+                    </div>
+                `);
 
-                if (this.gold >= cost && damage > 0) {
+                if (damage === 0) {
+                    this.showMessage("Your ship is already perfect! ✨");
+                    this.showButtons([{text: "🔙 Back", action: () => this.mainMenu()}]);
+                } else if (this.gold >= cost) {
                     this.showButtons([
-                        {text: "✨ Fix up your ship", action: () => {
+                        {text: "✨ Repair Ship", action: () => {
                             this.gold -= cost;
                             this.shipCondition = 100;
-                            this.print("⚒️ Hammer hammer hammer... ✨");
-                            this.print("🎉 Your ship looks amazing! Good as new!");
-                            this.print("The shipwright gives you a thumbs up! 👍");
-                            setTimeout(() => this.mainMenu(), 2000);
+                            this.showMessage("⚒️ Your ship is good as new! 🎉", true);
+                            this.updateStats();
+                            setTimeout(() => this.mainMenu(), 1500);
                         }},
-                        {text: "🔙 Maybe later", action: () => this.mainMenu()}
+                        {text: "🔙 Maybe Later", action: () => this.mainMenu()}
                     ]);
                 } else {
-                    if (damage === 0) {
-                        this.print("Your ship is already in perfect condition!");
-                    } else {
-                        this.print("The shipwright smiles: 'Come back when you have more gold!'");
-                    }
-                    this.showButtons([{text: "🔙 Go back", action: () => this.mainMenu()}]);
+                    this.showMessage("Not enough gold for repairs! 💰");
+                    this.showButtons([{text: "🔙 Back", action: () => this.mainMenu()}]);
                 }
             }
 
-            showStats() {
-                this.clear();
-                this.updateStatus();
-                this.print("📊 STATISTICS\n");
-                this.print(`Captain: ${this.playerName}`);
-                this.print(`Health: ${this.health}/100`);
-                this.print(`Gold: ${this.gold}`);
-                this.print(`Reputation: ${this.reputation}`);
-                this.print(`Ship Condition: ${this.shipCondition}%`);
-                this.print(`Treasures Found: ${this.treasuresFound}/5`);
-                this.print(`\nInventory (${this.inventory.length} items):`);
-                this.inventory.forEach(item => this.print(`  - ${item}`));
-
-                this.showButtons([{text: "🔙 Back to port", action: () => this.mainMenu()}]);
-            }
-
             winGame() {
-                this.clear();
-                this.print("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨\n");
-                this.print("   🎉🎊 YOU WON! 🎊🎉\n");
-                this.print("✨✨✨✨✨✨✨✨✨✨✨✨✨✨✨\n");
-                this.print(`🎩 Captain ${this.playerName}, you did it!`);
-                this.print("🏆 You've found all 5 legendary treasures!");
-                this.print(`\n💰 Final treasure: ${this.gold} gold`);
-                this.print(`⭐ Fame level: ${this.reputation}`);
-                this.print(`🦜 ${this.petParrot}: 'We're LEGENDS now! SQUAWK!'\n`);
-                this.print("You're now the most beloved treasure hunter in the seas!");
-                this.print("Stories of your kindness and adventures spread far and wide!");
-                this.print("\n✨ THANK YOU FOR PLAYING! ✨");
-
-                this.showButtons([{text: "🎮 Play Again", action: () => {
-                    game = new PirateGame();
-                    game.start();
-                }}]);
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 40px;">
+                        <div style="font-size: 100px; animation: bounce 1s infinite;">🏆</div>
+                        <div style="font-size: 40px; margin: 20px 0;">⭐ YOU WON! ⭐</div>
+                        <p style="color: white; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            Captain ${this.playerName}, you found all 5 treasures!<br>
+                            💰 ${this.gold} gold | ⭐ ${this.reputation} fame<br>
+                            ${this.petParrot}: "We're LEGENDS! SQUAWK!"
+                        </p>
+                    </div>
+                `);
+                this.showMessage("🎉 CONGRATULATIONS! You're the greatest treasure hunter! 🎉", true);
+                this.showButtons([{text: "🎮 Play Again", action: () => location.reload()}]);
             }
 
             quitGame() {
-                this.clear();
-                this.print("🌅 Thanks for sailing with us, Captain!");
-                this.print(`🦜 ${this.petParrot}: 'Come back soon! SQUAWK!'`);
-                this.print("⛵ Fair winds and following seas! ✨");
-
-                this.showButtons([{text: "🎮 Start New Game", action: () => {
-                    game = new PirateGame();
-                    game.start();
-                }}]);
+                this.setScene(`
+                    <div style="text-align: center; margin-top: 80px;">
+                        <div style="font-size: 80px;">🌅</div>
+                        <p style="color: white; font-size: 24px; text-shadow: 2px 2px 4px rgba(0,0,0,0.5);">
+                            Thanks for playing!<br>
+                            ${this.petParrot}: "Come back soon! SQUAWK!"
+                        </p>
+                    </div>
+                `);
+                this.showMessage("⛵ Fair winds and following seas! ✨");
+                this.showButtons([{text: "🎮 Play Again", action: () => location.reload()}]);
             }
         }
 
