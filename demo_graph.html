@@ -1,0 +1,598 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🧠 Memento Knowledge Graph Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            padding: 20px;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .layer {
+            background: white;
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+        }
+
+        .layer-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #667eea;
+        }
+
+        .layer-subtitle {
+            color: #888;
+            font-size: 0.85em;
+            margin-bottom: 20px;
+            font-style: italic;
+        }
+
+        .memento {
+            background: #f8f9ff;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .memento-id {
+            color: #667eea;
+            font-weight: bold;
+            font-size: 0.85em;
+        }
+
+        .memento-content {
+            margin-top: 5px;
+            color: #333;
+        }
+
+        .memento-time {
+            color: #999;
+            font-size: 0.75em;
+            margin-top: 5px;
+        }
+
+        .entity-type {
+            margin-bottom: 25px;
+        }
+
+        .entity-type-title {
+            font-weight: bold;
+            color: #764ba2;
+            font-size: 1.1em;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .entity {
+            background: #fff5f7;
+            border-left: 4px solid #764ba2;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .entity-name {
+            font-weight: bold;
+            color: #764ba2;
+            margin-bottom: 10px;
+        }
+
+        .entity-id {
+            color: #999;
+            font-size: 0.8em;
+        }
+
+        .property {
+            color: #555;
+            font-size: 0.9em;
+            margin: 5px 0;
+            padding-left: 15px;
+        }
+
+        .property-key {
+            color: #888;
+            font-weight: 600;
+        }
+
+        .sources {
+            color: #999;
+            font-size: 0.8em;
+            margin-top: 10px;
+            padding-left: 15px;
+        }
+
+        .relationship {
+            background: #f0fff4;
+            border-left: 4px solid #48bb78;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-radius: 8px;
+        }
+
+        .rel-arrow {
+            color: #48bb78;
+            font-size: 1.2em;
+            margin: 5px 0;
+        }
+
+        .rel-type {
+            background: #48bb78;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            display: inline-block;
+            font-size: 0.85em;
+            font-weight: bold;
+            margin: 5px 0;
+        }
+
+        .strength-bar {
+            background: #e2e8f0;
+            height: 8px;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .strength-fill {
+            background: linear-gradient(90deg, #48bb78 0%, #38a169 100%);
+            height: 100%;
+            transition: width 0.3s ease;
+        }
+
+        .evidence {
+            color: #999;
+            font-size: 0.8em;
+            margin-top: 8px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .stat {
+            background: #f8f9ff;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.85em;
+            margin-top: 5px;
+        }
+
+        .density-item {
+            background: #f8f9ff;
+            padding: 12px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .density-name {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .density-dots {
+            font-size: 1.2em;
+        }
+
+        .wow-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 25px;
+            border-radius: 15px;
+            margin-top: 20px;
+        }
+
+        .wow-box h3 {
+            margin-bottom: 15px;
+            font-size: 1.3em;
+        }
+
+        .wow-box ul {
+            list-style: none;
+        }
+
+        .wow-box li {
+            padding: 8px 0;
+            padding-left: 25px;
+            position: relative;
+        }
+
+        .wow-box li:before {
+            content: "✨";
+            position: absolute;
+            left: 0;
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 10px;
+            }
+
+            .header, .layer {
+                padding: 20px;
+            }
+
+            .header h1 {
+                font-size: 1.5em;
+            }
+
+            .stats {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🧠 Memento Knowledge Graph</h1>
+            <p>Multi-scale knowledge organization from our conversation</p>
+        </div>
+
+        <!-- Layer 1: Mementos -->
+        <div class="layer">
+            <div class="layer-title">📝 Layer 1: Raw Mementos</div>
+            <div class="layer-subtitle">Atomic knowledge units - exactly as observed</div>
+
+            <div class="memento">
+                <div class="memento-id">[m1]</div>
+                <div class="memento-content">User asked about glob patterns in Claude Code context</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m2]</div>
+                <div class="memento-content">User uses casual language like 'Aight cool'</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m3]</div>
+                <div class="memento-content">User is working on Memento project - a knowledge graph system</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m4]</div>
+                <div class="memento-content">User wants to see hierarchy, entities, and relationships in the demo</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m5]</div>
+                <div class="memento-content">User emphasizes keeping things simple and efficient</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m6]</div>
+                <div class="memento-content">User wants WOW factor in the demonstration</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m7]</div>
+                <div class="memento-content">User mentioned organizing data surgically into structure at different scales</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m8]</div>
+                <div class="memento-content">User is interested in knowledge graphs with raw 'Mementos' as base layer</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m9]</div>
+                <div class="memento-content">User values YAGNI and KISS principles in development</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+
+            <div class="memento">
+                <div class="memento-id">[m10]</div>
+                <div class="memento-content">User is currently on branch claude/explain-glob-patterns-*</div>
+                <div class="memento-time">⏱ 2025-11-16T03:45:29</div>
+            </div>
+        </div>
+
+        <!-- Layer 2: Entities -->
+        <div class="layer">
+            <div class="layer-title">🎯 Layer 2: Extracted Entities</div>
+            <div class="layer-subtitle">Structured knowledge organized by type hierarchy</div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 PERSON</div>
+                <div class="entity">
+                    <div class="entity-name">User <span class="entity-id">[e1_person]</span></div>
+                    <div class="property"><span class="property-key">communication_style:</span> casual, direct ('Aight cool')</div>
+                    <div class="property"><span class="property-key">technical_level:</span> advanced developer</div>
+                    <div class="property"><span class="property-key">current_focus:</span> knowledge graphs & memory systems</div>
+                    <div class="property"><span class="property-key">working_branch:</span> claude/explain-glob-patterns-*</div>
+                    <div class="sources">🔗 Sources: m1, m2, m3, m10</div>
+                </div>
+            </div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 PROJECT</div>
+                <div class="entity">
+                    <div class="entity-name">Memento <span class="entity-id">[e2_project]</span></div>
+                    <div class="property"><span class="property-key">type:</span> MCP server for persistent LLM memory</div>
+                    <div class="property"><span class="property-key">status:</span> active development</div>
+                    <div class="property"><span class="property-key">architecture:</span> graph-based vector storage with Neo4j</div>
+                    <div class="property"><span class="property-key">key_feature:</span> multi-scale hierarchical organization</div>
+                    <div class="sources">🔗 Sources: m3, m8</div>
+                </div>
+            </div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 DESIGN PRINCIPLE</div>
+                <div class="entity">
+                    <div class="entity-name">KISS (Keep It Simple) <span class="entity-id">[e3_design principle]</span></div>
+                    <div class="property"><span class="property-key">description:</span> Keep things simple and efficient</div>
+                    <div class="property"><span class="property-key">priority:</span> core value</div>
+                    <div class="property"><span class="property-key">application:</span> avoid over-engineering</div>
+                    <div class="sources">🔗 Sources: m5, m9</div>
+                </div>
+
+                <div class="entity">
+                    <div class="entity-name">YAGNI (You Ain't Gonna Need It) <span class="entity-id">[e4_design principle]</span></div>
+                    <div class="property"><span class="property-key">description:</span> Don't build features until needed</div>
+                    <div class="property"><span class="property-key">priority:</span> core value</div>
+                    <div class="property"><span class="property-key">application:</span> lean codebase</div>
+                    <div class="sources">🔗 Sources: m9</div>
+                </div>
+
+                <div class="entity">
+                    <div class="entity-name">Surgical Organization <span class="entity-id">[e5_design principle]</span></div>
+                    <div class="property"><span class="property-key">description:</span> Organize data surgically at different scales</div>
+                    <div class="property"><span class="property-key">applies_to:</span> hierarchy, entities, relationships</div>
+                    <div class="property"><span class="property-key">implementation:</span> multi-layer knowledge structure</div>
+                    <div class="sources">🔗 Sources: m7, m4</div>
+                </div>
+            </div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 CONCEPT</div>
+                <div class="entity">
+                    <div class="entity-name">Multi-Scale Knowledge <span class="entity-id">[e6_concept]</span></div>
+                    <div class="property"><span class="property-key">layers:</span> raw mementos → entities → relationships → hierarchy</div>
+                    <div class="property"><span class="property-key">purpose:</span> organize information at multiple abstraction levels</div>
+                    <div class="property"><span class="property-key">benefit:</span> trace high-level concepts back to atomic facts</div>
+                    <div class="sources">🔗 Sources: m4, m7, m8</div>
+                </div>
+            </div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 REQUIREMENT</div>
+                <div class="entity">
+                    <div class="entity-name">WOW Factor <span class="entity-id">[e7_requirement]</span></div>
+                    <div class="property"><span class="property-key">description:</span> Demo must be impressive and compelling</div>
+                    <div class="property"><span class="property-key">elements:</span> visualization, clarity, power</div>
+                    <div class="property"><span class="property-key">target:</span> demonstrate system capabilities</div>
+                    <div class="sources">🔗 Sources: m6</div>
+                </div>
+            </div>
+
+            <div class="entity-type">
+                <div class="entity-type-title">📂 TOOL</div>
+                <div class="entity">
+                    <div class="entity-name">Claude Code <span class="entity-id">[e8_tool]</span></div>
+                    <div class="property"><span class="property-key">type:</span> AI coding assistant</div>
+                    <div class="property"><span class="property-key">feature_of_interest:</span> glob patterns for file matching</div>
+                    <div class="property"><span class="property-key">usage_context:</span> development workflow</div>
+                    <div class="sources">🔗 Sources: m1</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Layer 3: Relationships -->
+        <div class="layer">
+            <div class="layer-title">🔗 Layer 3: Relationships</div>
+            <div class="layer-subtitle">Semantic connections forming the knowledge graph</div>
+
+            <div class="relationship">
+                <div><strong>User</strong> (Person)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">WORKS_ON</div>
+                <div class="rel-arrow">→ <strong>Memento</strong> (Project)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 100%"></div></div>
+                <div class="evidence">Evidence: m3</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>User</strong> (Person)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">VALUES</div>
+                <div class="rel-arrow">→ <strong>KISS (Keep It Simple)</strong> (Design Principle)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 95%"></div></div>
+                <div class="evidence">Evidence: m5, m9</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>User</strong> (Person)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">VALUES</div>
+                <div class="rel-arrow">→ <strong>YAGNI (You Ain't Gonna Need It)</strong> (Design Principle)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 95%"></div></div>
+                <div class="evidence">Evidence: m9</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>User</strong> (Person)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">VALUES</div>
+                <div class="rel-arrow">→ <strong>Surgical Organization</strong> (Design Principle)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 90%"></div></div>
+                <div class="evidence">Evidence: m7, m4</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>Memento</strong> (Project)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">IMPLEMENTS</div>
+                <div class="rel-arrow">→ <strong>Multi-Scale Knowledge</strong> (Concept)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 100%"></div></div>
+                <div class="evidence">Evidence: m8, m4</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>Surgical Organization</strong> (Design Principle)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">GUIDES</div>
+                <div class="rel-arrow">→ <strong>Multi-Scale Knowledge</strong> (Concept)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 85%"></div></div>
+                <div class="evidence">Evidence: m7, m4</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>KISS (Keep It Simple)</strong> (Design Principle)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">CONSTRAINS</div>
+                <div class="rel-arrow">→ <strong>Memento</strong> (Project)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 80%"></div></div>
+                <div class="evidence">Evidence: m5</div>
+            </div>
+
+            <div class="relationship">
+                <div><strong>User</strong> (Person)</div>
+                <div class="rel-arrow">↓</div>
+                <div class="rel-type">USES</div>
+                <div class="rel-arrow">→ <strong>Claude Code</strong> (Tool)</div>
+                <div class="strength-bar"><div class="strength-fill" style="width: 70%"></div></div>
+                <div class="evidence">Evidence: m1</div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="layer">
+            <div class="layer-title">📊 Graph Statistics</div>
+
+            <div class="stats">
+                <div class="stat">
+                    <div class="stat-value">10</div>
+                    <div class="stat-label">Raw Mementos</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">8</div>
+                    <div class="stat-label">Extracted Entities</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">11</div>
+                    <div class="stat-label">Relationships</div>
+                </div>
+                <div class="stat">
+                    <div class="stat-value">6</div>
+                    <div class="stat-label">Entity Types</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Knowledge Density -->
+        <div class="layer">
+            <div class="layer-title">🌐 Knowledge Density Map</div>
+
+            <div class="density-item">
+                <div class="density-name">User</div>
+                <div class="density-dots">●●●●●●</div>
+            </div>
+
+            <div class="density-item">
+                <div class="density-name">Memento</div>
+                <div class="density-dots">●●●●○</div>
+            </div>
+
+            <div class="density-item">
+                <div class="density-name">Multi-Scale Knowledge</div>
+                <div class="density-dots">●●●○○</div>
+            </div>
+
+            <div class="density-item">
+                <div class="density-name">KISS (Keep It Simple)</div>
+                <div class="density-dots">●●○○○</div>
+            </div>
+
+            <div class="density-item">
+                <div class="density-name">Surgical Organization</div>
+                <div class="density-dots">●●○○○</div>
+            </div>
+        </div>
+
+        <!-- WOW Factor -->
+        <div class="wow-box">
+            <h3>✨ WOW Factor Elements</h3>
+            <ul>
+                <li>Multi-scale organization: raw → structured → connected</li>
+                <li>Hierarchical entity types: automatic categorization</li>
+                <li>Relationship strength: weighted connections with evidence</li>
+                <li>Surgical precision: each fact traced to original sources</li>
+                <li>Graph density: visualized knowledge interconnectedness</li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
