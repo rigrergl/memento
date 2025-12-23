@@ -27,6 +27,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
   vim \
   && apt-get clean && rm -rf /var/lib/apt/lists/*
 
+# Install Python (needed for Spec Kit)
+RUN apt-get update && apt-get install -y python3 python3-pip curl \
+    && rm -rf /var/lib/apt/lists/*
+
 # Ensure default node user has access to /usr/local/share
 RUN mkdir -p /usr/local/share/npm-global && \
   chown -R node:node /usr/local/share
@@ -56,6 +60,19 @@ RUN ARCH=$(dpkg --print-architecture) && \
 
 # Set up non-root user
 USER node
+
+# ========== Spec Kit ==========
+
+# Install uv (fast Python package installer)
+RUN curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Add uv to PATH
+ENV PATH="/home/node/.local/bin:$PATH"
+
+# Install Spec Kit CLI
+RUN uv tool install specify-cli --from git+https://github.com/github/spec-kit.git
+
+# ==============================
 
 # Install global packages
 ENV NPM_CONFIG_PREFIX=/usr/local/share/npm-global
