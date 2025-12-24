@@ -1,21 +1,20 @@
 <!--
   Sync Impact Report
   ===================
-  Version change: N/A → 1.0.0 (initial creation)
+  Version change: 1.0.0 → 1.1.0
 
   Added sections:
-  - Core Principles (5 principles)
-  - Design Patterns
-  - Quality Gates
-  - Governance
+  - Principle VI: Test-Driven Development (TDD)
 
-  Modified principles: N/A (initial creation)
-  Removed sections: N/A (initial creation)
+  Modified principles:
+  - Principle V: Renamed "Mandatory Testing" → "Mandatory Testing (NON-NEGOTIABLE)" (unchanged content)
+
+  Removed sections: None
 
   Templates requiring updates:
   - .specify/templates/plan-template.md: ✅ compatible (Constitution Check section exists)
   - .specify/templates/spec-template.md: ✅ compatible (no changes needed)
-  - .specify/templates/tasks-template.md: ✅ compatible (checkpoint structure aligns with test gates)
+  - .specify/templates/tasks-template.md: ✅ compatible (already contains TDD guidance: "Tests MUST be written and FAIL before implementation")
 
   Follow-up TODOs: None
 -->
@@ -98,6 +97,30 @@ All implementation phases MUST conclude with passing unit tests. This is a hard 
 
 **Rationale:** Tests are the safety net that enables refactoring, prevents regressions, and documents expected behavior. Skipping tests creates technical debt that compounds over time.
 
+### VI. Test-Driven Development (TDD)
+
+All implementation work MUST follow the Test-Driven Development workflow: Red → Green → Refactor. Write tests first, watch them fail, then implement just enough code to make them pass.
+
+**The TDD Cycle:**
+1. **RED**: Write a failing test that defines expected behavior
+2. **GREEN**: Write the minimum implementation code to make the test pass
+3. **REFACTOR**: Clean up the code while keeping tests green
+
+**Rules:**
+- Tests MUST be written BEFORE implementation code
+- Implementation code MUST NOT be written until a failing test exists for it
+- When tests require type definitions, interfaces, or stubs to compile, create minimal stubs that allow the test to run but fail (e.g., methods that raise `NotImplementedError` or return obviously wrong values)
+- Implementation MUST be the minimum required to make the current failing test pass
+- Do NOT implement features "while you're there" - only what the test demands
+- After tests pass, refactor for clarity while maintaining green tests
+
+**Practical Application:**
+- For a new method: write test → create method stub that fails → implement method → test passes
+- For a new class: write test → create class with stub methods → implement class → test passes
+- For fixing a bug: write test that reproduces bug → fix bug → test passes
+
+**Rationale:** TDD ensures every line of code exists because a test demanded it. This produces leaner code, better test coverage, and executable documentation. The discipline of "test first" catches design issues early when they're cheap to fix.
+
 ## Design Patterns
 
 The following patterns are standard for this project:
@@ -122,8 +145,9 @@ These gates MUST pass before implementation phases are considered complete:
 1. **Code Gate**: All new code follows YAGNI and KISS principles
 2. **Pattern Gate**: Design patterns used correctly and consistently
 3. **Architecture Gate**: Layer boundaries respected
-4. **Test Gate**: `uv run pytest` passes with no failures
-5. **Clean Code Gate**: No unused imports, no dead code, no TODO comments without linked issues
+4. **TDD Gate**: Tests written before implementation; failing test exists before any new code (or just enough code so that the tests can compile and fail)
+5. **Test Gate**: `uv run pytest` passes with no failures
+6. **Clean Code Gate**: No unused imports, no dead code, no TODO comments without linked issues
 
 ## Governance
 
@@ -146,4 +170,4 @@ This constitution supersedes all other practices. All implementation work MUST c
 - Complexity MUST be justified against YAGNI/KISS
 - Use CLAUDE.md for runtime development guidance
 
-**Version**: 1.0.0 | **Ratified**: 2025-12-23 | **Last Amended**: 2025-12-23
+**Version**: 1.1.0 | **Ratified**: 2025-12-23 | **Last Amended**: 2025-12-24
