@@ -66,7 +66,7 @@ Create production-ready MCP tools that:
 async def store_memory(
     content: str,
     confidence: float = 1.0,
-    source: str = 'extracted'
+    source: str = 'auto_captured'
 ) -> dict:
     """
     Store a new memory/fact about the user.
@@ -77,7 +77,7 @@ async def store_memory(
     Args:
         content: The memory content in natural language
         confidence: Confidence score 0-1 (default 1.0)
-        source: 'explicit' if user asked to remember, 'extracted' if inferred
+        source: 'user_requested' if user asked to remember, 'auto_captured' if the LLM captured it automatically
 
     Returns:
         {
@@ -130,7 +130,7 @@ async def search_memories(query: str, limit: int = 5) -> list[dict]:
 
 **Dependencies:**
 - Requires completed `[mcp]-build-fastmcp-server.md` story
-- Requires `GraphMemoryService` from Core Components epic
+- Requires `MemoryService` from Core Components epic
 - See `Documentation/mcp-tool-specification.md` for complete API spec
 
 **Testing:**

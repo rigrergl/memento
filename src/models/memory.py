@@ -15,7 +15,7 @@ class Memory:
         content: The actual memory content in natural language
         embedding: Vector embedding for semantic search
         confidence: Confidence score (0-1)
-        source: How the memory was created ('explicit' or 'extracted')
+        source: How the memory was created ('user_requested' or 'auto_captured')
         supersedes: ID of memory this replaces (if any)
         superseded_by: ID of memory that replaces this (if any)
         created_at: Timestamp when memory was created
@@ -27,9 +27,9 @@ class Memory:
     content: str
     embedding: list[float]
     confidence: float
-    source: str  # 'explicit' | 'extracted'
     created_at: datetime
     updated_at: datetime
     accessed_at: datetime
+    source: str = "user_requested"
     supersedes: Optional[str] = None
     superseded_by: Optional[str] = None

@@ -1,0 +1,220 @@
+{
+  "tool": {
+    "name": "remember",
+    "description": "Store a memory as a Memory node with vector embedding for future semantic retrieval",
+    "version": "1.0.0",
+    "protocol": "MCP",
+    "transport": "HTTP",
+    "endpoint": "/mcp"
+  },
+  "input": {
+    "schema": {
+      "type": "object",
+      "properties": {
+        "content": {
+          "type": "string",
+          "description": "The exact memory text from the user",
+          "minLength": 1,
+          "maxLength": 4000,
+          "examples": [
+            "My favorite color is blue",
+            "I work at Anthropic as a software engineer",
+            "My birthday is January 15th"
+          ]
+        },
+        "confidence": {
+          "type": "number",
+          "description": "Confidence score for this memory on a 0-1 scale. Higher values (0.8-1.0) indicate high certainty, medium values (0.4-0.7) indicate moderate confidence, and lower values (0.0-0.3) indicate uncertain or tentative memories. This helps the system understand how reliable this memory is.",
+          "minimum": 0.0,
+          "maximum": 1.0,
+          "examples": [0.85, 0.5, 0.9]
+        }
+      },
+      "required": ["content", "confidence"],
+      "additionalProperties": false
+    },
+    "validation": {
+      "rules": [
+        {
+          "field": "content",
+          "rule": "must_not_be_empty",
+          "message": "Memory text cannot be empty or whitespace-only"
+        },
+        {
+          "field": "content",
+          "rule": "max_length",
+          "value": "config.max_memory_length",
+          "message": "Memory text exceeds maximum length of {max_length} characters"
+        },
+        {
+          "field": "confidence",
+          "rule": "range",
+          "min": 0.0,
+          "max": 1.0,
+          "message": "Confidence must be between 0.0 and 1.0"
+        }
+      ]
+    }
+  },
+  "output": {
+    "success": {
+      "schema": {
+        "type": "object",
+        "properties": {
+          "memory_id": {
+            "type": "string",
+            "format": "uuid",
+            "description": "Unique identifier of the created Memory",
+            "examples": ["550e8400-e29b-41d4-a716-446655440000"]
+          },
+          "content": {
+            "type": "string",
+            "description": "Echo of the stored memory text"
+          },
+          "confidence": {
+            "type": "number",
+            "description": "Echo of the confidence score"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "ISO 8601 timestamp when the Memory was created",
+            "examples": ["2025-12-24T10:30:00+00:00"]
+          },
+          "embedding_dimensions": {
+            "type": "integer",
+            "const": 384,
+            "description": "Dimension count of the generated embedding"
+          }
+        },
+        "required": ["memory_id", "content", "confidence", "created_at", "embedding_dimensions"]
+      },
+      "example": {
+        "memory_id": "550e8400-e29b-41d4-a716-446655440000",
+        "content": "My favorite color is blue",
+        "confidence": 0.85,
+        "created_at": "2025-12-24T10:30:00+00:00",
+        "embedding_dimensions": 384
+      }
+    },
+    "errors": [
+      {
+        "code": "VALIDATION_ERROR",
+        "description": "Input validation failed",
+        "http_status": 400,
+        "scenarios": [
+          "Empty or whitespace-only content",
+          "content exceeds maximum length",
+          "confidence outside 0.0-1.0 range"
+        ],
+        "example": {
+          "error": "VALIDATION_ERROR",
+          "message": "Memory text exceeds maximum length of 4000 characters",
+          "details": {
+            "field": "content",
+            "length": 5000,
+            "max_length": 4000
+          }
+        }
+      },
+      {
+        "code": "EMBEDDING_ERROR",
+        "description": "Failed to generate embedding",
+        "http_status": 503,
+        "scenarios": [
+          "Embedding provider unavailable",
+          "Model loading failure"
+        ],
+        "example": {
+          "error": "EMBEDDING_ERROR",
+          "message": "Embedding service is currently unavailable",
+          "details": {
+            "provider": "local",
+            "model": "sentence-transformers/all-MiniLM-L6-v2"
+          }
+        }
+      },
+      {
+        "code": "DATABASE_ERROR",
+        "description": "Failed to persist Memory",
+        "http_status": 503,
+        "scenarios": [
+          "Neo4j connection failure",
+          "Database unavailable",
+          "Index creation failure"
+        ],
+        "example": {
+          "error": "DATABASE_ERROR",
+          "message": "Failed to connect to Neo4j database",
+          "details": {
+            "database": "neo4j",
+            "uri": "neo4j+s://xxxxx.databases.neo4j.io"
+          }
+        }
+      }
+    ]
+  },
+  "behavior": {
+    "idempotency": "Not idempotent - each call creates a new Memory with unique UUID",
+    "side_effects": [
+      "Creates new Memory node in Neo4j",
+      "Generates vector embedding using LocalEmbeddingProvider",
+      "Ensures vector index exists (one-time setup on first call)"
+    ],
+    "performance": {
+      "target_latency_p95": "2000ms",
+      "expected_latency": "200-800ms typical",
+      "factors": [
+        "Embedding generation: ~100-300ms",
+        "Neo4j write: ~50-200ms",
+        "Index creation (first call only): ~100-500ms"
+      ]
+    }
+  },
+  "implementation_notes": {
+    "layers": {
+      "mcp_server": "FastMCP HTTP transport, tool registration, request validation",
+      "service": "MemoryService - orchestration, text validation, embedding coordination",
+      "repository": "Neo4jRepository - database operations, index management",
+      "provider": "LocalEmbeddingProvider - vector generation (existing)"
+    },
+    "dependencies": {
+      "external": [
+        "Neo4j database (configured via MEMENTO_NEO4J_URI)",
+        "sentence-transformers model (all-MiniLM-L6-v2)"
+      ],
+      "internal": [
+        "IEmbeddingProvider interface",
+        "Config class for settings"
+      ]
+    },
+    "configuration": {
+      "environment_variables": [
+        "MEMENTO_MAX_MEMORY_LENGTH (default: 4000)",
+        "MEMENTO_MCP_HOST (default: 0.0.0.0)",
+        "MEMENTO_MCP_PORT (default: 8000)",
+        "MEMENTO_NEO4J_URI (required)",
+        "MEMENTO_NEO4J_USER (required)",
+        "MEMENTO_NEO4J_PASSWORD (required)",
+        "MEMENTO_EMBEDDING_PROVIDER (default: local)",
+        "MEMENTO_EMBEDDING_MODEL (default: sentence-transformers/all-MiniLM-L6-v2)",
+        "MEMENTO_EMBEDDING_CACHE_DIR (default: .cache/models)"
+      ]
+    }
+  },
+  "testing": {
+    "unit_tests": [
+      "test_remember_tool_valid_input",
+      "test_remember_tool_empty_input",
+      "test_remember_tool_exceeds_max_length",
+      "test_remember_tool_whitespace_only",
+      "test_remember_tool_unicode_text"
+    ],
+    "integration_tests": [
+      "test_remember_tool_end_to_end",
+      "test_remember_tool_creates_vector_index",
+      "test_remember_tool_embedding_failure",
+      "test_remember_tool_database_failure"
+    ]
+  }
+}

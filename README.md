@@ -50,7 +50,70 @@ graph TB
 
 ## 🚀 Quick Start
 
-TODO
+### Prerequisites
+
+- Python 3.10+
+- [uv](https://docs.astral.sh/uv/) (installed automatically in the dev container)
+- Neo4j 5.11+ with vector index support ([Neo4j Aura Free](https://neo4j.com/cloud/platform/aura-graph-database/) works)
+
+### 1. Install dependencies
+
+```bash
+uv sync
+```
+
+### 2. Configure environment
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and fill in your Neo4j credentials — the three required fields:
+
+```
+MEMENTO_NEO4J_URI=neo4j+s://xxxxx.databases.neo4j.io
+MEMENTO_NEO4J_USER=neo4j
+MEMENTO_NEO4J_PASSWORD=your-password-here
+```
+
+All other fields have defaults and can be left as-is.
+
+### 3. Start the MCP server
+
+```bash
+uv run python -m src.mcp.server
+```
+
+The first run downloads the `all-MiniLM-L6-v2` embedding model (~80MB) to `.cache/models/`. It also creates the Neo4j vector index and uniqueness constraint automatically. The server listens at `http://0.0.0.0:8000/mcp`.
+
+### 4. Test with MCP Inspector
+
+Install and run the [MCP Inspector](https://github.com/modelcontextprotocol/inspector) on your host machine:
+
+```bash
+npx @modelcontextprotocol/inspector
+```
+
+Connect it to: `http://localhost:8000/mcp`
+
+Two tools are available:
+- **`remember`** — stores a memory. Params: `content` (string), `confidence` (float 0–1)
+- **`recall`** — semantic search over stored memories. Params: `query` (string), `limit` (int, default 10)
+
+### Running in the dev container
+
+Run the server inside the container as normal. Port 8000 is declared in `devcontainer.json` (`forwardPorts`) so it is forwarded to your host automatically by your IDE (PyCharm, VS Code, etc). The MCP Inspector on your host can then reach `http://localhost:8000/mcp`.
+
+> **Note**: If you rebuild the container, PyCharm may need a moment to re-establish port forwarding after the container starts.
+
+### Running tests
+
+```bash
+uv run pytest                                         # all tests
+uv run pytest --cov=src --cov-report=term-missing     # with coverage
+```
+
+All tests use mocks — no Neo4j connection or embedding model required.
 
 ## 📁 Project Structure
 
@@ -92,8 +155,8 @@ memento/
 ## 📚 Documentation
 
 - [Sample Use Cases](Documentation/sample-use-cases.md) - See Memento in action
-- [MCP Tool Specification](Documentation/mcp-tool-specification.md) - API contract
-- [Data Model](Documentation/data-model.md) - Memory structure details
+- [MCP Tool Specification](Documentation/legacy/mcp-tool-specification.md) - API contract
+- [Data Model](Documentation/legacy/data-model.md) - Memory structure details
 - [Architecture Decisions](Documentation/ADR/) - Key design rationale
 
 ## 🛠️ Technology Stack

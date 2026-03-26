@@ -168,7 +168,7 @@ async def consolidate_memories(
 **Background Lifecycle Job:**
 ```python
 class MemoryLifecycleManager:
-    def __init__(self, memory_service: GraphMemoryService):
+    def __init__(self, memory_service: MemoryService):
         self.service = memory_service
 
     async def run_lifecycle_maintenance(self):
