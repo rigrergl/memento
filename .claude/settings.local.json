@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.specify/scripts/bash/check-prerequisites.sh:*)",
+      "Bash(.specify/scripts/bash/setup-plan.sh:*)",
+      "WebSearch",
+      "WebFetch(domain:neo4j.com)",
+      "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
+      "Bash(find:*)",
+      "Bash(uv run pytest*)"
+    ]
+  }
+}

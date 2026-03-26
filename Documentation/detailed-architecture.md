@@ -5,7 +5,7 @@
 ```mermaid
 classDiagram
     class MCPServer {
-        -memory_service: GraphMemoryService
+        -memory_service: MemoryService
         -auth_service: AuthService
         +start()
         +register_tools()
@@ -24,7 +24,7 @@ classDiagram
         +dimension() int
     }
     
-    class GraphMemoryService {
+    class MemoryService {
         -embedding_provider: IEmbeddingProvider
         -repository: Neo4jRepository
         +store_memory(user_id: str, content: str) Memory
@@ -90,13 +90,13 @@ classDiagram
     }
 
     MCPServer --> MCPTools
-    MCPServer --> GraphMemoryService
+    MCPServer --> MemoryService
     MCPServer --> AuthService
-    MCPTools --> GraphMemoryService
+    MCPTools --> MemoryService
 
-    GraphMemoryService --> IEmbeddingProvider
-    GraphMemoryService --> Neo4jRepository
-    GraphMemoryService --> Memory
+    MemoryService --> IEmbeddingProvider
+    MemoryService --> Neo4jRepository
+    MemoryService --> Memory
 
     Neo4jRepository --> Memory
     Neo4jRepository --> User

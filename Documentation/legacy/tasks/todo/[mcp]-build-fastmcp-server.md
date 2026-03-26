@@ -40,7 +40,7 @@ class MCPServer:
         self.config = load_config()
         self.embedding_provider = EmbeddingFactory.create(self.config)
         self.repository = Neo4jRepository(self.config)
-        self.memory_service = GraphMemoryService(
+        self.memory_service = MemoryService(
             embedding_provider=self.embedding_provider,
             repository=self.repository
         )

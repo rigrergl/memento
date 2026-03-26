@@ -63,7 +63,7 @@ async def store_memory(
     user_id: str,
     content: str,
     confidence: float = 1.0,
-    source: str = 'extracted'
+    source: str = 'auto_captured'
 ) -> dict:
     # 1. Store memory (existing logic)
     memory = await self._store_basic_memory(user_id, content, confidence, source)

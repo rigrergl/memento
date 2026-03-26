@@ -2,16 +2,6 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Getting Started - Context Awareness
-
-**IMPORTANT**: At the beginning of every conversation, check the `Documentation/tasks/` folder to understand current project context:
-
-- `Documentation/tasks/in-progress/`: Active tasks being worked on - review these first to understand what's currently happening
-- `Documentation/tasks/planned/`: Upcoming tasks that have been planned. No need to look at this unless asked.
-- `Documentation/tasks/done/`: Completed tasks for reference. No need to look at this unless asked.
-
-This task folder system helps maintain context across conversations and ensures continuity of work.
-
 ## Project Overview
 
 Memento is an MCP (Model Context Protocol) server that provides persistent memory capabilities for LLMs. It uses Python with FastMCP framework and Neo4j for graph-based vector storage, enabling semantic search and memory relationships.
@@ -21,27 +11,17 @@ Memento is an MCP (Model Context Protocol) server that provides persistent memor
 The system follows a layered architecture:
 
 - **MCP Server Layer**: FastMCP-based server exposing memory tools to LLM clients
-- **Memory Service Layer**: Core business logic for memory operations (GraphMemoryService)
+- **Memory Service Layer**: Core business logic for memory operations (MemoryService)
 - **Repository Layer**: Neo4j database operations (Neo4jRepository)
 - **Provider Layer**: Pluggable LLM and embedding providers (OpenAI, Ollama, local transformers)
 
 Key components:
 - `MCPServer`: Main server entry point with tool registration
-- `GraphMemoryService`: Core memory operations with semantic search
+- `MemoryService`: Core memory operations with semantic search
 - `Neo4jRepository`: Database abstraction for Neo4j operations
 - `IEmbeddingProvider`/`ILLMProvider`: Interfaces for pluggable AI providers
 - `EmbeddingFactory`/`LLMFactory`: Factory pattern for provider creation
 
-## Memory Operations
-
-The system exposes four main MCP tools:
-
-1. **store_memory**: Store new memories, returns similar memories for conflict detection
-2. **supersede_memory**: Mark old memories as outdated when new information conflicts
-3. **search_memories**: Semantic search across memories (excludes superseded)
-4. **list_recent_memories**: Get recently created memories
-
-Important: Always check store_memory responses for similar memories and handle conflicts by calling supersede_memory when appropriate.
 
 ## Development Commands
 
@@ -92,9 +72,9 @@ When reviewing architecture or planning tasks:
 - `Documentation/sample-use-cases.md`: Example usage scenarios
 - `Documentation/ADR/`: Architecture Decision Records
 
-## Important Notes
+## Active Technologies
+- Python 3.10+ (per pyproject.toml `requires-python = ">=3.10"`) + FastMCP 2.11+, Neo4j driver 5.28+, sentence-transformers 5.1+, Pydantic 2.11+ (001-baseline-rag)
+- Neo4j (graph database with vector index capabilities) (001-baseline-rag)
 
-- No actual Python implementation files exist yet in `src/` - this is planning/documentation phase
-- The architecture supports both local (Ollama, transformers) and cloud (OpenAI) AI providers
-- Multi-tenant support planned for future via user_id isolation
-- All memory operations are designed to be atomic and immediately consistent
+## Recent Changes
+- 001-baseline-rag: Added Python 3.10+ (per pyproject.toml `requires-python = ">=3.10"`) + FastMCP 2.11+, Neo4j driver 5.28+, sentence-transformers 5.1+, Pydantic 2.11+

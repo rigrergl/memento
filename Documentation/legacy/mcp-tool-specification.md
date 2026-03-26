@@ -31,9 +31,9 @@ Stores a new memory in the system. Always succeeds and returns similar memories 
       },
       source: {
         type: "string",
-        enum: ["explicit", "extracted"],
-        default: "extracted",
-        description: "Whether user explicitly asked to remember (explicit) or extracted from conversation (extracted).",
+        enum: ["user_requested", "auto_captured"],
+        default: "auto_captured",
+        description: "Whether user explicitly asked to remember (user_requested) or the LLM captured it automatically (auto_captured).",
         required: false
       }
     },
@@ -64,7 +64,7 @@ Stores a new memory in the system. Always succeeds and returns similar memories 
 {
   "content": "User moved to Austin",
   "confidence": 1.0,
-  "source": "explicit"
+  "source": "user_requested"
 }
 
 // Response with conflict
@@ -73,7 +73,7 @@ Stores a new memory in the system. Always succeeds and returns similar memories 
     "id": "mem_789",
     "content": "User moved to Austin",
     "confidence": 1.0,
-    "source": "explicit",
+    "source": "user_requested",
     "created_at": "2024-06-15T10:00:00Z"
   },
   "similar": [
@@ -192,7 +192,7 @@ Searches for relevant memories using semantic similarity. Automatically filters 
       "id": "mem_789",
       "content": "User moved to Austin",
       "confidence": 1.0,
-      "source": "explicit",
+      "source": "user_requested",
       "created_at": "2024-06-15T10:00:00Z",
       "relevance_score": 0.92
     },
@@ -200,7 +200,7 @@ Searches for relevant memories using semantic similarity. Automatically filters 
       "id": "mem_456",
       "content": "User works remotely from home in Austin",
       "confidence": 0.9,
-      "source": "extracted",
+      "source": "auto_captured",
       "created_at": "2024-06-20T14:00:00Z",
       "relevance_score": 0.85
     }
@@ -253,14 +253,14 @@ Returns the most recently created memories. Useful for reviewing what was just s
       "id": "mem_892",
       "content": "User prefers window seats on flights",
       "confidence": 1.0,
-      "source": "explicit",
+      "source": "user_requested",
       "created_at": "2024-12-01T16:45:00Z"
     },
     {
       "id": "mem_891",
       "content": "User is planning a trip to Japan in March",
       "confidence": 0.95,
-      "source": "extracted",
+      "source": "auto_captured",
       "created_at": "2024-12-01T16:40:00Z"
     }
   ]
@@ -298,7 +298,7 @@ Returns the most recently created memories. Useful for reviewing what was just s
 ```
 User: "I moved to Austin last month"
 
-1. LLM calls: store_memory("User moved to Austin last month", confidence=1.0, source="explicit")
+1. LLM calls: store_memory("User moved to Austin last month", confidence=1.0, source="user_requested")
 
 2. MCP returns:
 {
@@ -323,7 +323,7 @@ The Memory object returned by tools has this structure:
   id: string,                  // Unique identifier
   content: string,              // The memory text
   confidence: number,           // 0-1 score
-  source: 'explicit' | 'extracted',
+  source: 'user_requested' | 'auto_captured',
   created_at: string,          // ISO 8601 timestamp
   updated_at: string,          // ISO 8601 timestamp
   accessed_at: string,         // ISO 8601 timestamp

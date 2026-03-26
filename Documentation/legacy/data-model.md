@@ -18,7 +18,7 @@ interface Memory {
   
   // Metadata
   confidence: number;             // Confidence score (0-1)
-  source: 'explicit' | 'extracted';  // How memory was created
+  source: 'user_requested' | 'auto_captured';  // How memory was created
   
   // Conflict Tracking
   supersedes?: string;            // ID of memory this replaces
@@ -35,7 +35,7 @@ interface Memory {
 
 - **No Categories**: We use semantic search instead of predefined categories. The content itself determines what the memory is about.
 - **No Tags**: Initially skipped for simplicity. Can be added later if needed.
-- **Simple Source**: Just tracking whether user explicitly asked to remember ('explicit') or it was extracted from conversation ('extracted').
+- **Simple Source**: Just tracking whether user explicitly asked to remember ('user_requested') or it was captured automatically from conversation ('auto_captured').
 - **Conflict Tracking**: Built-in supersession support for handling outdated information.
 
 ## Relationships
@@ -98,7 +98,7 @@ When retrieving memories, superseded memories are automatically filtered out by 
 async function createMemory(
   content: string, 
   confidence: number = 1.0,
-  source: 'explicit' | 'extracted' = 'extracted'
+  source: 'user_requested' | 'auto_captured' = 'auto_captured'
 ): Promise<Memory> {
   const memory: Memory = {
     id: generateMemoryId(),           // e.g., "mem_" + nanoid()

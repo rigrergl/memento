@@ -17,7 +17,7 @@ Create a production-ready memory service that:
 
 ## Acceptance Criteria
 
-- [ ] `src/memory/service.py` implements `GraphMemoryService` class
+- [ ] `src/memory/service.py` implements `MemoryService` class
 - [ ] Constructor accepts `embedding_provider`, `repository`, and optional `llm_provider`
 - [ ] Implements `store_memory(user_id, content, confidence, source) -> dict` method
   - Generates embedding for content
@@ -49,7 +49,7 @@ async def store_memory(
     user_id: str,
     content: str,
     confidence: float = 1.0,
-    source: str = 'extracted'
+    source: str = 'auto_captured'
 ) -> dict:
     # 1. Generate embedding
     embedding = await self.embedding_provider.generate_embedding(content)

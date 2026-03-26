@@ -37,6 +37,26 @@ class Config(BaseSettings):
         description="Neo4j database password"
     )
 
+    # Memory validation
+    max_memory_length: int = Field(
+        default=4000,
+        ge=1,
+        le=100000,
+        description="Maximum allowed memory text length in characters"
+    )
+
+    # MCP Server
+    mcp_host: str = Field(
+        default="0.0.0.0",
+        description="MCP server host address"
+    )
+    mcp_port: int = Field(
+        default=8000,
+        ge=1024,
+        le=65535,
+        description="MCP server port number"
+    )
+
     model_config = {
         "env_prefix": "MEMENTO_",
         "env_file": ".env",
