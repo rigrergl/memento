@@ -7,7 +7,7 @@
       "WebFetch(domain:neo4j.com)",
       "Bash(.specify/scripts/bash/update-agent-context.sh:*)",
       "Bash(find:*)",
-      "Bash(uv run pytest*)"
+      "Bash(uv run pytest:*)"
     ]
   }
 }
