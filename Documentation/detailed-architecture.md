@@ -13,8 +13,8 @@ classDiagram
     
     class MCPTools {
         <<MCPToolDefinitions>>
-        +remember(content: str) MemoryResponse
-        +search(query: str, limit: int) List~Result~
+        +remember(content: str, confidence: float) str
+        +recall(query: str, limit: int) str
         +list_recent(limit: int) List~Memory~
     }
     
@@ -26,32 +26,34 @@ classDiagram
     
     class MemoryService {
         -embedding_provider: IEmbeddingProvider
-        -repository: Neo4jRepository
-        +store_memory(user_id: str, content: str) Memory
-        +search_graph(user_id: str, query: str, limit: int) List~GraphNode~
+        -repository: IGraphRepository
+        +store_memory(content: str, confidence: float) Memory
+        +search_memory(query: str, limit: int) List~tuple~
         +get_recent_memories(user_id: str, limit: int) List~Memory~
-        -create_memory_node(user_id: str, content: str, embedding: List~float~) Memory
     }
     
     class Neo4jRepository {
         -driver: neo4j.Driver
-        +create_memory(user_id: str, memory_data: dict) Memory
+        +ensure_vector_index() None
+        +create_memory(memory: Memory) None
+        +search_memories(embedding: List~float~, limit: int) List~tuple~
+        +close() None
         +create_user_if_not_exists(user_id: str) User
-        +search_by_vector(user_id: str, embedding: List~float~, limit: int) List~Memory~
         +get_recent_memories(user_id: str, limit: int) List~Memory~
-        -execute_query(query: str, params: dict) Result
-        -inject_user_filter(query: str, user_id: str) tuple~str, dict~
     }
     
     class Memory {
         <<DataModel>>
         +id: str
-        +user_id: str
         +content: str
         +embedding: List~float~
-        +timestamp: datetime
+        +confidence: float
+        +created_at: datetime
+        +updated_at: datetime
+        +accessed_at: datetime
         +source: str
-        +metadata: dict
+        +supersedes: Optional~str~
+        +superseded_by: Optional~str~
     }
     
     class User {
@@ -72,6 +74,9 @@ classDiagram
         +neo4j_uri: str
         +neo4j_user: str
         +neo4j_password: str
+        +max_memory_length: int
+        +mcp_host: str
+        +mcp_port: int
     }
 
     class Factory {

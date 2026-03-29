@@ -10,42 +10,17 @@ Transform stateless LLM interactions into continuous, personalized relationships
 
 ```mermaid
 graph TB
-    User[User] -->|Conversation| Client[LLM Client<br/>Claude/GPT/etc]
-    Client -->|MCP Protocol| MCP[Memento MCP Server<br/>FastMCP + Python]
-    
-    MCP -->|Memory Operations| MS[Memory Service Layer]
-    
-    MS -->|Direct Queries| Neo4j[(Neo4j<br/>Graph + Vector Storage)]
-    MS -->|Intelligence| LLM[LLM Provider]
-    MS -->|Embeddings| EMB[Embedding Provider]
-    
-    subgraph "Providers via Factory Pattern"
-        LLM -->|Cloud| OpenAI[OpenAI API]
-        LLM -->|Local| Ollama[Ollama Server]
-        
-        EMB -->|Cloud| OAIEmb[OpenAI Embeddings]
-        EMB -->|Local| STEmb[Sentence Transformers]
-        EMB -->|Local| OllamaEmb[Ollama Embeddings]
-    end
-    
-    subgraph "Neo4j Graph RAG"
-        Neo4j --> VM[(Vector Index<br/>Semantic Search)]
-        Neo4j --> GM[(Graph Structure<br/>Relationships)]
-        Neo4j --> TM[(Properties<br/>Metadata & Time)]
-    end
-    
+    User[User] -->|Conversation| Client[LLM Client<br/>Claude / GPT / etc.]
+    Client -->|MCP Protocol| MCP[Memento MCP Server<br/>FastMCP · Python]
+
+    MCP --> MS[Memory Service]
+    MS --> EMB[Embedding Provider<br/>Sentence Transformers]
+    MS --> Neo4j[(Neo4j<br/>Graph + Vector Storage)]
+
     subgraph "Deployment Modes"
-        LocalMode[Local Mode<br/>Docker Compose<br/>Single User]
-        CloudMode[Cloud Mode<br/>Neo4j Aura + Auth0<br/>Multi-tenant]
+        LocalMode[Local Mode<br/>Docker Compose<br/>Neo4j bundled · Single user]
+        CloudMode[Cloud Mode — Roadmap<br/>Neo4j Aura + Auth0<br/>Multi-tenant]
     end
-    
-    style User fill:#e1f5fe
-    style Client fill:#fff3e0
-    style MCP fill:#f3e5f5
-    style MS fill:#fff9c4
-    style Neo4j fill:#e8f5e9
-    style LLM fill:#fce4ec
-    style EMB fill:#f0f4c3
 ```
 
 ## 🚀 Quick Start
@@ -120,21 +95,24 @@ All tests use mocks — no Neo4j connection or embedding model required.
 ```
 memento/
 ├── Documentation/          # Project documentation
-│   ├── tasks/             # Task tracking (in-progress, todo, done)
-│   └── ADR/               # Architecture Decision Records
+│   ├── ADR/               # Architecture Decision Records
+│   └── legacy/            # Superseded documentation
+├── specs/                 # Feature specifications
+│   └── 001-baseline-rag/
 ├── src/
 │   ├── models/            # Shared domain models (Memory, User)
 │   ├── embeddings/        # Embedding provider implementations
-│   ├── llms/              # LLM provider implementations
 │   ├── memory/            # Memory service layer
 │   ├── graph/             # Neo4j repository layer
 │   ├── mcp/               # MCP server implementation
-│   └── utils/             # Shared utilities
+│   └── utils/             # Shared utilities (config, factory)
 └── tests/
-    └── unit/              # Unit test suites
-        ├── test_embeddings/
-        ├── test_memory/
-        └── test_graph/
+    ├── test_embeddings/
+    ├── test_graph/
+    ├── test_mcp/
+    ├── test_memory/
+    ├── test_models/
+    └── test_utils/
 ```
 
 ## 🎮 Core Features
@@ -142,15 +120,15 @@ memento/
 ### Current (MVP)
 - ✅ Store factual memories with metadata
 - ✅ Semantic search across all memories
-- ✅ List recent memories
 - ✅ Basic relevance scoring
 
 ### Roadmap
 - 🔄 Memory updates and contradiction resolution
-- 🏷️ Memory categorization and namespaces  
+- 🏷️ Memory categorization and namespaces
 - 🧠 Memory synthesis and insight generation
 - 📊 Memory lifecycle management (importance decay, consolidation)
-- 🔐 Multi-tenant support
+- 📋 List recent memories
+- 🔐 Multi-tenant support with Auth0
 
 ## 📚 Documentation
 
@@ -163,10 +141,9 @@ memento/
 
 - **MCP Server**: Python + FastMCP
 - **Database**: Neo4j (graph + vectors)
-- **LLM**: Local (Ollama/llama.cpp) or API (OpenAI/Anthropic)
-- **Embeddings**: Local transformers or API (OpenAI/Anthropic)
-- **Auth (Cloud)**: Auth0 OAuth 2.1
-- **Testing**: Python pytest + MCP test harness
+- **Embeddings**: Sentence Transformers (local)
+- **Auth (Cloud — Roadmap)**: Auth0 OAuth 2.1
+- **Testing**: pytest
 
 ## 📝 License
 

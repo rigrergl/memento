@@ -13,31 +13,28 @@ The system follows a layered architecture:
 - **MCP Server Layer**: FastMCP-based server exposing memory tools to LLM clients
 - **Memory Service Layer**: Core business logic for memory operations (MemoryService)
 - **Repository Layer**: Neo4j database operations (Neo4jRepository)
-- **Provider Layer**: Pluggable LLM and embedding providers (OpenAI, Ollama, local transformers)
+- **Provider Layer**: Pluggable embedding providers (local Sentence Transformers)
 
 Key components:
 - `MCPServer`: Main server entry point with tool registration
 - `MemoryService`: Core memory operations with semantic search
 - `Neo4jRepository`: Database abstraction for Neo4j operations
-- `IEmbeddingProvider`/`ILLMProvider`: Interfaces for pluggable AI providers
-- `EmbeddingFactory`/`LLMFactory`: Factory pattern for provider creation
+- `IEmbeddingProvider`: Interface for pluggable embedding providers
+- `Factory`: Creates the configured embedding provider
 
 
 ## Development Commands
 
-Since this is an early-stage project with minimal implementation, there are currently no standardized build/test commands. The project uses Python virtual environment (`.venv/` directory present).
-
-Expected future commands:
-- `pytest` for running tests
-- `python -m memento.mcp_server` for running the MCP server
-- Standard Python development workflow
+- `uv run pytest` — run all tests
+- `uv run pytest --cov=src --cov-report=term-missing` — run with coverage
+- `uv run python -m src.mcp.server` — start the MCP server
 
 ## Key Design Patterns
 
-- **Factory Pattern**: For creating embedding and LLM providers
+- **Factory Pattern**: For creating embedding providers
 - **Repository Pattern**: For database operations abstraction
-- **Interface Segregation**: Separate interfaces for embedding vs LLM providers
-- **Plugin Architecture**: Swappable providers for different AI services
+- **Interface Segregation**: Separate interfaces for each provider type
+- **Plugin Architecture**: Swappable embedding providers
 
 ## Development Philosophy
 
