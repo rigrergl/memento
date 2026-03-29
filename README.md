@@ -121,13 +121,13 @@ memento/
 - ✅ Store factual memories with metadata
 - ✅ Semantic search across all memories
 - ✅ Basic relevance scoring
+- ✅ List recent memories
 
 ### Roadmap
 - 🔄 Memory updates and contradiction resolution
 - 🏷️ Memory categorization and namespaces
 - 🧠 Memory synthesis and insight generation
 - 📊 Memory lifecycle management (importance decay, consolidation)
-- 📋 List recent memories
 - 🔐 Multi-tenant support with Auth0
 
 ## 📚 Documentation
