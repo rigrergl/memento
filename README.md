@@ -123,11 +123,11 @@ memento/
 - ✅ Basic relevance scoring
 
 ### Roadmap
+- 📋 List recent memories
 - 🔄 Memory updates and contradiction resolution
 - 🏷️ Memory categorization and namespaces
 - 🧠 Memory synthesis and insight generation
 - 📊 Memory lifecycle management (importance decay, consolidation)
-- 📋 List recent memories
 - 🔐 Multi-tenant support with Auth0
 
 ## 📚 Documentation
