@@ -121,9 +121,9 @@ memento/
 - ✅ Store factual memories with metadata
 - ✅ Semantic search across all memories
 - ✅ Basic relevance scoring
-- ✅ List recent memories
 
 ### Roadmap
+- 📋 List recent memories
 - 🔄 Memory updates and contradiction resolution
 - 🏷️ Memory categorization and namespaces
 - 🧠 Memory synthesis and insight generation
