@@ -71,3 +71,67 @@ The current implementation hardcodes cosine similarity in `Neo4jRepository.ensur
 1. Add a migration script that reads all Memory nodes, drops the existing vector index, recreates it with the new similarity function, and re-indexes embeddings.
 2. If the embedding model also changes, re-embed all content fields using the new provider before re-indexing.
 3. Consider making the index name configurable so multiple indexes (one per metric/model combination) can coexist during a migration window.
+
+---
+
+## TD-003 — MCP server host defaults to `0.0.0.0`
+
+**Feature**: ADR-007 container setup
+**Severity**: Medium (any local deployment on a shared network)
+**Status**: Superseded by ADR-007 — `Config.mcp_host` and `Config.mcp_port` are deleted entirely. Host/port are passed as CLI flags to `fastmcp run` per environment, so there is no longer a default value to get wrong. Cloud Run explicitly passes `--host 0.0.0.0 --port 8080`; local environments use stdio and have no host binding.
+
+### Context
+
+`Config.mcp_host` defaults to `0.0.0.0`, which binds the HTTP server to all interfaces. On shared networks (café Wi-Fi, office LAN), this exposes the Memento server to other machines on the same network. The safe default for local deployments is `127.0.0.1` (loopback-only). Cloud Run legitimately requires `0.0.0.0` since its traffic router connects to the container over the network.
+
+### Risk (historical — resolved by ADR-007)
+
+- **Local/power-user risk**: If a user accidentally ran the server over HTTP locally, it was reachable from the LAN. No longer applicable: local environments use stdio, and the HTTP transport knob has been removed.
+- **Cloud Run**: No risk — `0.0.0.0` is required and intentional there, now passed explicitly via `--host 0.0.0.0`.
+- **Dev (stdio)**: No risk — host binding is irrelevant for stdio transport.
+
+### Affected locations
+
+- `src/utils/config.py` — `mcp_host` field default value (to be deleted per ADR-007)
+
+### Remediation
+
+Implement ADR-007: remove `mcp_host` and `mcp_port` fields from `src/utils/config.py` and delete any remaining references in the application code. Transport, host, and port are now handled as CLI flags by the `fastmcp` launcher.
+
+---
+
+## TD-004 — Embedding model distribution and caching strategy is unresolved
+
+**Feature**: ADR-007 container setup
+**Severity**: Low (dev); Medium (power-user container UX)
+**Status**: Deferred — decision intentionally postponed until embedding strategy is finalised
+
+### Context
+
+Memento currently uses `sentence-transformers/all-MiniLM-L6-v2`, downloaded on first use to `MEMENTO_EMBEDDING_CACHE_DIR` (~90 MB). In the power-user container setup described in ADR-007, each MCP client invocation creates a fresh container via `docker compose run --rm memento`. Without a persistence strategy, the model is re-downloaded on every spawn, producing multi-second cold starts and, eventually, a broken setup if the model is ever pulled from Hugging Face.
+
+Three broad options exist, none of which this project is ready to commit to:
+
+1. **Bake the model into the Docker image** at build time — simple, offline-capable, but inflates the image by ~100 MB and couples image rebuilds to model changes.
+2. **Mount a named volume** at the cache dir — keeps the image small, but adds a first-run download and a second volume to manage.
+3. **Switch to a hosted embedding API** (Voyage, OpenAI, Cohere, etc.) — removes the local-model problem entirely, but introduces a new external dependency, cost, and latency profile, and breaks the "zero API keys for power users" story.
+
+### Risk
+
+- **Current dev risk**: None — dev runs on the VM with a persistent filesystem, model is cached once.
+- **Power-user risk (if ADR-007 ships as-is)**: Every MCP client spawn re-downloads ~90 MB. First-time UX is slow; offline use is broken; a model taken down upstream silently breaks existing installs.
+- **Cloud Run risk**: Cold starts pay the full model download on every new instance unless the model is baked into the image.
+
+### Affected locations
+
+- `src/embeddings/local_embedding_provider.py`
+- Dockerfile (not yet written — ADR-007)
+- `docker-compose.yml` (not yet written — ADR-007)
+- `Documentation/ADR/ADR-007-container-setup.md` — Dockerfile Strategy section
+
+### Remediation (before productionising power-user distribution)
+
+1. Decide whether Memento continues to bundle a local embedding model at all, or moves to a hosted API for personal-scale deployments.
+2. If local: pick between image-baking and volume-mounting, and document the trade-off in ADR-007 or a follow-up ADR.
+3. If hosted: design the provider abstraction for API-key management, add a new `IEmbeddingProvider` implementation, and update the cloud and power-user credential flows to include the API key as a secret.
+4. Ensure Cloud Run cold-start behaviour is acceptable under whichever option is chosen.
