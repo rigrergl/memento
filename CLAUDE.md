@@ -70,8 +70,5 @@ When reviewing architecture or planning tasks:
 - `Documentation/ADR/`: Architecture Decision Records
 
 ## Active Technologies
-- Python 3.10+ (per pyproject.toml `requires-python = ">=3.10"`) + FastMCP 2.11+, Neo4j driver 5.28+, sentence-transformers 5.1+, Pydantic 2.11+ (001-baseline-rag)
-- Neo4j (graph database with vector index capabilities) (001-baseline-rag)
-
-## Recent Changes
-- 001-baseline-rag: Added Python 3.10+ (per pyproject.toml `requires-python = ">=3.10"`) + FastMCP 2.11+, Neo4j driver 5.28+, sentence-transformers 5.1+, Pydantic 2.11+
+- Python (see `pyproject.toml` for version constraints), FastMCP, Neo4j driver, sentence-transformers, Pydantic/pydantic-settings
+- Neo4j (graph database with vector index capabilities)

@@ -29,7 +29,7 @@ graph TB
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/) (installed automatically in the dev container)
-- Neo4j 5.11+ with vector index support ([Neo4j Aura Free](https://neo4j.com/cloud/platform/aura-graph-database/) works)
+- Neo4j 2026.03.1+ (or 2025.x series) with vector index support ([Neo4j Aura Free](https://neo4j.com/cloud/platform/aura-graph-database/) works)
 
 ### 1. Install dependencies
 
