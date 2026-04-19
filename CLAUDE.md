@@ -72,3 +72,8 @@ When reviewing architecture or planning tasks:
 ## Active Technologies
 - Python (see `pyproject.toml` for version constraints), FastMCP, Neo4j driver, sentence-transformers, Pydantic/pydantic-settings
 - Neo4j (graph database with vector index capabilities)
+
+<!-- SPECKIT START -->
+For additional context about technologies to be used, project structure,
+shell commands, and other important information, read the current plan
+<!-- SPECKIT END -->
