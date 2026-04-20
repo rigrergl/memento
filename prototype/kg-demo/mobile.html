@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Knowledge Graph - Mobile</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            overflow: hidden;
+            height: 100vh;
+            touch-action: pan-y;
+        }
+
+        #app {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
+
+        header {
+            background: rgba(0,0,0,0.3);
+            backdrop-filter: blur(10px);
+            padding: 15px;
+            color: white;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        h1 {
+            font-size: 1.5em;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.85em;
+            opacity: 0.9;
+        }
+
+        #canvas-container {
+            flex: 1;
+            position: relative;
+            overflow: hidden;
+            background: white;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            touch-action: none;
+        }
+
+        #controls {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 10px;
+            z-index: 100;
+        }
+
+        .btn {
+            background: rgba(255,255,255,0.95);
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-size: 1em;
+            font-weight: 600;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            cursor: pointer;
+            touch-action: manipulation;
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+        }
+
+        #info-panel {
+            position: fixed;
+            bottom: 80px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.98);
+            border-radius: 15px;
+            padding: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+            transform: translateY(120%);
+            transition: transform 0.3s ease;
+            max-height: 60vh;
+            overflow-y: auto;
+            z-index: 99;
+        }
+
+        #info-panel.visible {
+            transform: translateY(0);
+        }
+
+        .info-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #667eea;
+        }
+
+        .info-title {
+            font-size: 1.2em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .close-btn {
+            background: none;
+            border: none;
+            font-size: 1.5em;
+            color: #999;
+            cursor: pointer;
+            padding: 0;
+            width: 30px;
+            height: 30px;
+        }
+
+        .info-content {
+            font-size: 0.9em;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .info-row {
+            margin: 8px 0;
+        }
+
+        .info-label {
+            font-weight: 600;
+            color: #764ba2;
+        }
+
+        .memento-item {
+            background: #f5f5f5;
+            padding: 8px;
+            margin: 5px 0;
+            border-radius: 5px;
+            border-left: 3px solid #667eea;
+            font-size: 0.85em;
+        }
+
+        #stats {
+            position: fixed;
+            top: 70px;
+            left: 10px;
+            right: 10px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: flex;
+            justify-content: space-around;
+            font-size: 0.8em;
+            z-index: 50;
+        }
+
+        .stat {
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 0.85em;
+        }
+
+        .legend {
+            position: fixed;
+            top: 140px;
+            left: 10px;
+            background: rgba(255,255,255,0.95);
+            border-radius: 10px;
+            padding: 10px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            max-width: 150px;
+            font-size: 0.75em;
+            z-index: 50;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin: 5px 0;
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .pulse {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div id="app">
+        <header>
+            <h1>🧠 Knowledge Graph</h1>
+            <div class="subtitle">Touch & drag to explore</div>
+        </header>
+
+        <div id="stats">
+            <div class="stat">
+                <div class="stat-value">15</div>
+                <div class="stat-label">Mementos</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">14</div>
+                <div class="stat-label">Entities</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">16</div>
+                <div class="stat-label">Links</div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background: #e1f5fe;"></div>Person</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #f3e5f5;"></div>Project</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #fff3e0;"></div>Tech</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #e8f5e9;"></div>Concept</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #fff9c4;"></div>Task</div>
+            <div class="legend-item"><div class="legend-dot" style="background: #fce4ec;"></div>Pref</div>
+        </div>
+
+        <div id="canvas-container">
+            <canvas id="canvas"></canvas>
+        </div>
+
+        <div id="controls">
+            <button class="btn" id="reset-btn">🔄 Reset</button>
+        </div>
+
+        <div id="info-panel">
+            <div class="info-header">
+                <span class="info-title" id="info-title">Node Details</span>
+                <button class="close-btn" id="close-info">×</button>
+            </div>
+            <div class="info-content" id="info-content">
+                Tap a node to see details
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Graph Data
+        const entities = {
+            e_user: {name: "User", type: "Person", scale: "domain", color: "#e1f5fe", mementos: ["m001", "m007", "m009", "m015"]},
+            e_ai_memory: {name: "AI Memory", type: "Concept", scale: "domain", color: "#e8f5e9", mementos: ["m002", "m012"]},
+            e_memento: {name: "Memento", type: "Project", scale: "system", color: "#f3e5f5", mementos: ["m001", "m002", "m003"]},
+            e_neo4j: {name: "Neo4j", type: "Technology", scale: "component", color: "#fff3e0", mementos: ["m004", "m014"]},
+            e_fastmcp: {name: "FastMCP", type: "Technology", scale: "component", color: "#fff3e0", mementos: ["m003"]},
+            e_mcp: {name: "MCP", type: "Technology", scale: "component", color: "#fff3e0", mementos: ["m002"]},
+            e_embeddings: {name: "Embeddings", type: "Technology", scale: "component", color: "#fff3e0", mementos: ["m008", "m011"]},
+            e_branch: {name: "Branch", type: "Concept", scale: "atomic", color: "#e8f5e9", mementos: ["m006"]},
+            e_isolation: {name: "Isolation", type: "Concept", scale: "atomic", color: "#e8f5e9", mementos: ["m005", "m007"]},
+            e_task_emb: {name: "Task: Embeddings", type: "Task", scale: "atomic", color: "#fff9c4", mementos: ["m008"]},
+            e_task_demo: {name: "Task: Demo", type: "Task", scale: "atomic", color: "#fff9c4", mementos: ["m008"]},
+            e_adr006: {name: "ADR-006", type: "Concept", scale: "atomic", color: "#e8f5e9", mementos: ["m013"]},
+            e_pref_hier: {name: "Loves Hierarchy", type: "Preference", scale: "atomic", color: "#fce4ec", mementos: ["m009"]},
+            e_pref_wow: {name: "Wants WOW", type: "Preference", scale: "atomic", color: "#fce4ec", mementos: ["m010"]}
+        };
+
+        const mementos = {
+            m001: "User is working on a project called Memento",
+            m002: "Memento is an MCP server that provides persistent memory for LLMs",
+            m003: "The project uses Python with FastMCP framework",
+            m004: "The project uses Neo4j for graph-based vector storage",
+            m005: "User is working in an isolated cloud environment",
+            m006: "Current branch is claude/knowledge-graph-prototype-...",
+            m007: "User cares about isolation from other agents",
+            m008: "The project has two main tasks in progress",
+            m009: "User wants to see knowledge organized with hierarchy",
+            m010: "User values the WOW factor in visualizations",
+            m011: "The project uses sentence-transformers for embeddings",
+            m012: "User distinguishes between raw 'Mementos' and structured knowledge",
+            m013: "The architecture leverages client LLM (ADR-006)",
+            m014: "Neo4j supports both graph relationships and vector embeddings",
+            m015: "User is technical - asked about worktrees and OS"
+        };
+
+        const links = [
+            {from: "e_user", to: "e_memento"},
+            {from: "e_user", to: "e_isolation"},
+            {from: "e_user", to: "e_pref_hier"},
+            {from: "e_user", to: "e_pref_wow"},
+            {from: "e_memento", to: "e_ai_memory"},
+            {from: "e_memento", to: "e_mcp"},
+            {from: "e_memento", to: "e_fastmcp"},
+            {from: "e_memento", to: "e_neo4j"},
+            {from: "e_memento", to: "e_embeddings"},
+            {from: "e_neo4j", to: "e_embeddings"},
+            {from: "e_adr006", to: "e_memento"},
+            {from: "e_task_emb", to: "e_memento"},
+            {from: "e_task_demo", to: "e_memento"},
+            {from: "e_task_emb", to: "e_embeddings"},
+            {from: "e_branch", to: "e_isolation"},
+            {from: "e_user", to: "e_branch"}
+        ];
+
+        // Canvas setup
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        function resize() {
+            const container = document.getElementById('canvas-container');
+            width = container.clientWidth;
+            height = container.clientHeight;
+            canvas.width = width;
+            canvas.height = height;
+        }
+        resize();
+        window.addEventListener('resize', resize);
+
+        // Physics
+        const nodes = [];
+        const scales = {domain: 50, system: 40, component: 30, atomic: 25};
+
+        Object.keys(entities).forEach((id, i) => {
+            const e = entities[id];
+            nodes.push({
+                id,
+                x: Math.random() * width,
+                y: Math.random() * height,
+                vx: 0,
+                vy: 0,
+                radius: scales[e.scale],
+                ...e
+            });
+        });
+
+        // Touch handling
+        let dragNode = null;
+        let touchStart = {x: 0, y: 0};
+        let selectedNode = null;
+
+        function getTouch(e) {
+            const rect = canvas.getBoundingClientRect();
+            const touch = e.touches ? e.touches[0] : e;
+            return {
+                x: touch.clientX - rect.left,
+                y: touch.clientY - rect.top
+            };
+        }
+
+        function findNode(x, y) {
+            for (let node of nodes) {
+                const dx = x - node.x;
+                const dy = y - node.y;
+                if (dx*dx + dy*dy < node.radius*node.radius) {
+                    return node;
+                }
+            }
+            return null;
+        }
+
+        canvas.addEventListener('touchstart', e => {
+            e.preventDefault();
+            const pos = getTouch(e);
+            touchStart = pos;
+            dragNode = findNode(pos.x, pos.y);
+            if (dragNode) {
+                dragNode.fixed = true;
+            }
+        });
+
+        canvas.addEventListener('touchmove', e => {
+            e.preventDefault();
+            if (dragNode) {
+                const pos = getTouch(e);
+                dragNode.x = pos.x;
+                dragNode.y = pos.y;
+                dragNode.vx = 0;
+                dragNode.vy = 0;
+            }
+        });
+
+        canvas.addEventListener('touchend', e => {
+            e.preventDefault();
+            if (dragNode) {
+                const dist = Math.hypot(touchStart.x - dragNode.x, touchStart.y - dragNode.y);
+                if (dist < 10) {
+                    showInfo(dragNode);
+                }
+                dragNode.fixed = false;
+                dragNode = null;
+            }
+        });
+
+        // Mouse support for testing
+        canvas.addEventListener('mousedown', e => {
+            const rect = canvas.getBoundingClientRect();
+            const pos = {x: e.clientX - rect.left, y: e.clientY - rect.top};
+            dragNode = findNode(pos.x, pos.y);
+            if (dragNode) dragNode.fixed = true;
+        });
+
+        canvas.addEventListener('mousemove', e => {
+            if (dragNode) {
+                const rect = canvas.getBoundingClientRect();
+                dragNode.x = e.clientX - rect.left;
+                dragNode.y = e.clientY - rect.top;
+            }
+        });
+
+        canvas.addEventListener('mouseup', () => {
+            if (dragNode) {
+                dragNode.fixed = false;
+                dragNode = null;
+            }
+        });
+
+        canvas.addEventListener('click', e => {
+            const rect = canvas.getBoundingClientRect();
+            const node = findNode(e.clientX - rect.left, e.clientY - rect.top);
+            if (node) showInfo(node);
+        });
+
+        // Info panel
+        function showInfo(node) {
+            selectedNode = node;
+            document.getElementById('info-title').textContent = node.name;
+            const mementoList = node.mementos.map(m =>
+                `<div class="memento-item"><strong>${m}:</strong> ${mementos[m]}</div>`
+            ).join('');
+
+            document.getElementById('info-content').innerHTML = `
+                <div class="info-row"><span class="info-label">Type:</span> ${node.type}</div>
+                <div class="info-row"><span class="info-label">Scale:</span> ${node.scale}</div>
+                <div class="info-row"><span class="info-label">Sources:</span> ${node.mementos.length} mementos</div>
+                <div style="margin-top: 10px;">
+                    <div class="info-label">Raw Mementos:</div>
+                    ${mementoList}
+                </div>
+            `;
+            document.getElementById('info-panel').classList.add('visible');
+        }
+
+        document.getElementById('close-info').addEventListener('click', () => {
+            document.getElementById('info-panel').classList.remove('visible');
+            selectedNode = null;
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => {
+            nodes.forEach(node => {
+                node.x = Math.random() * width;
+                node.y = Math.random() * height;
+                node.vx = 0;
+                node.vy = 0;
+            });
+        });
+
+        // Physics simulation
+        function simulate() {
+            const centerX = width / 2;
+            const centerY = height / 2;
+
+            // Apply forces
+            nodes.forEach(node => {
+                if (node.fixed) return;
+
+                // Center gravity
+                const dx = centerX - node.x;
+                const dy = centerY - node.y;
+                node.vx += dx * 0.0001;
+                node.vy += dy * 0.0001;
+
+                // Repulsion from other nodes
+                nodes.forEach(other => {
+                    if (node === other) return;
+                    const dx = node.x - other.x;
+                    const dy = node.y - other.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const force = 1000 / (dist * dist);
+                    node.vx += (dx / dist) * force;
+                    node.vy += (dy / dist) * force;
+                });
+
+                // Link attraction
+                links.forEach(link => {
+                    const isSource = link.from === node.id;
+                    const isTarget = link.to === node.id;
+                    if (!isSource && !isTarget) return;
+
+                    const other = nodes.find(n => n.id === (isSource ? link.to : link.from));
+                    const dx = other.x - node.x;
+                    const dy = other.y - node.y;
+                    const dist = Math.sqrt(dx*dx + dy*dy) || 1;
+                    const force = (dist - 100) * 0.01;
+                    node.vx += (dx / dist) * force;
+                    node.vy += (dy / dist) * force;
+                });
+
+                // Damping
+                node.vx *= 0.8;
+                node.vy *= 0.8;
+
+                // Update position
+                node.x += node.vx;
+                node.y += node.vy;
+
+                // Bounds
+                const margin = node.radius;
+                if (node.x < margin) { node.x = margin; node.vx *= -0.5; }
+                if (node.x > width - margin) { node.x = width - margin; node.vx *= -0.5; }
+                if (node.y < margin) { node.y = margin; node.vy *= -0.5; }
+                if (node.y > height - margin) { node.y = height - margin; node.vy *= -0.5; }
+            });
+        }
+
+        // Render
+        function draw() {
+            ctx.clearRect(0, 0, width, height);
+
+            // Draw links
+            ctx.strokeStyle = '#ccc';
+            ctx.lineWidth = 2;
+            links.forEach(link => {
+                const from = nodes.find(n => n.id === link.from);
+                const to = nodes.find(n => n.id === link.to);
+                ctx.beginPath();
+                ctx.moveTo(from.x, from.y);
+                ctx.lineTo(to.x, to.y);
+                ctx.stroke();
+            });
+
+            // Draw nodes
+            nodes.forEach(node => {
+                ctx.fillStyle = node.color;
+                ctx.strokeStyle = node === selectedNode ? '#667eea' : '#333';
+                ctx.lineWidth = node === selectedNode ? 4 : 2;
+
+                ctx.beginPath();
+                ctx.arc(node.x, node.y, node.radius, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.stroke();
+
+                // Label
+                ctx.fillStyle = '#333';
+                ctx.font = '12px system-ui';
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText(node.name, node.x, node.y);
+            });
+        }
+
+        // Animation loop
+        function animate() {
+            simulate();
+            draw();
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        console.log('🧠 Mobile Knowledge Graph Ready!');
+    </script>
+</body>
+</html>
