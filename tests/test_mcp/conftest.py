@@ -15,7 +15,12 @@ os.environ.setdefault("MEMENTO_NEO4J_PASSWORD", "password")
 
 @pytest.fixture(scope="package", autouse=True)
 def patch_server_imports():
-    """Patch Neo4j driver and SentenceTransformer so server.py can be imported without real services."""
+    """Patch Neo4j driver and SentenceTransformer so server.py can be imported without real services.
+
+    After the lifespan refactor, server.py no longer instantiates these at import time, so these
+    patches are belt-and-suspenders: they are no-ops at import time but remain in place to guard
+    against regressions where someone reintroduces module-level instantiation.
+    """
     mock_model = MagicMock()
     mock_model.get_sentence_embedding_dimension.return_value = 384
     mock_driver = MagicMock()

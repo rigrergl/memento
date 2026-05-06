@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "memento": {
+      "command": "uv",
+      "args": ["run", "fastmcp", "run", "src/mcp/server.py", "--reload"]
+    },
+    "neo4j-cypher": {
+      "command": "uvx",
+      "args": ["mcp-neo4j-cypher"],
+      "env": {
+        "NEO4J_URI": "${MEMENTO_NEO4J_URI}",
+        "NEO4J_USERNAME": "${MEMENTO_NEO4J_USER}",
+        "NEO4J_PASSWORD": "${MEMENTO_NEO4J_PASSWORD}"
+      }
+    }
+  }
+}

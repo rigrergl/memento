@@ -78,7 +78,7 @@ The current implementation hardcodes cosine similarity in `Neo4jRepository.ensur
 
 **Feature**: ADR-007 container setup
 **Severity**: Medium (any local deployment on a shared network)
-**Status**: Superseded by ADR-007 — `Config.mcp_host` and `Config.mcp_port` are deleted entirely. Host/port are passed as CLI flags to `fastmcp run` per environment, so there is no longer a default value to get wrong. Cloud Run explicitly passes `--host 0.0.0.0 --port 8080`; local environments use stdio and have no host binding.
+**Status**: Resolved by ADR-007 / spec 002-container-setup — `Config.mcp_host` and `Config.mcp_port` deleted; transport/host/port now CLI flags; local power-user compose binds `127.0.0.1:8000`.
 
 ### Context
 
@@ -86,9 +86,9 @@ The current implementation hardcodes cosine similarity in `Neo4jRepository.ensur
 
 ### Risk (historical — resolved by ADR-007)
 
-- **Local/power-user risk**: If a user accidentally ran the server over HTTP locally, it was reachable from the LAN. No longer applicable: local environments use stdio, and the HTTP transport knob has been removed.
+- **Local/power-user risk**: If a user accidentally ran the server over HTTP locally, it was reachable from the LAN. No longer applicable: the power-user compose binds the published port to `127.0.0.1:8000`, so the LAN cannot reach it even though Memento listens on `0.0.0.0` inside the container.
 - **Cloud Run**: No risk — `0.0.0.0` is required and intentional there, now passed explicitly via `--host 0.0.0.0`.
-- **Dev (stdio)**: No risk — host binding is irrelevant for stdio transport.
+- **Dev (stdio)**: No risk — the dev loop uses stdio transport via `uv run fastmcp run --reload`; host binding is irrelevant.
 
 ### Affected locations
 
@@ -129,9 +129,13 @@ Three broad options exist, none of which this project is ready to commit to:
 - `docker-compose.yml` (not yet written — ADR-007)
 - `Documentation/ADR/ADR-007-container-setup.md` — Dockerfile Strategy section
 
+### Status update (2026-04-27)
+
+002-container-setup chose option 1 (bake into image) as the interim resolution: the published Docker image bakes `sentence-transformers/all-MiniLM-L6-v2` to `/app/.cache/models` at build time, giving offline capability and eliminating cold-start downloads for power users. The longer-term decision between continued image-baking, volume-mounting, or switching to a hosted embedding API remains open and is not blocked by this feature.
+
 ### Remediation (before productionising power-user distribution)
 
 1. Decide whether Memento continues to bundle a local embedding model at all, or moves to a hosted API for personal-scale deployments.
-2. If local: pick between image-baking and volume-mounting, and document the trade-off in ADR-007 or a follow-up ADR.
+2. If local: re-evaluate image-baking vs. volume-mounting as model size grows or if model changes become frequent.
 3. If hosted: design the provider abstraction for API-key management, add a new `IEmbeddingProvider` implementation, and update the cloud and power-user credential flows to include the API key as a secret.
 4. Ensure Cloud Run cold-start behaviour is acceptable under whichever option is chosen.

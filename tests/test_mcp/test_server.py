@@ -1,4 +1,5 @@
 """Tests for MCP server tools: remember and recall (T027-T035, T073-T079, T090)."""
+import asyncio
 from datetime import datetime, timezone
 from unittest.mock import MagicMock, patch
 
@@ -21,6 +22,13 @@ def _make_memory(**kwargs) -> Memory:
     return Memory(**defaults)
 
 
+def _get_tool_fn(tool_name: str):
+    """Return the raw function backing a registered FastMCP tool."""
+    from src.mcp.server import mcp
+    tool = asyncio.run(mcp.get_tool(tool_name))
+    return tool.fn
+
+
 # ---------------------------------------------------------------------------
 # T027: MCP server registers remember tool
 # ---------------------------------------------------------------------------
@@ -28,8 +36,9 @@ def _make_memory(**kwargs) -> Memory:
 def test_mcp_server_registers_remember_tool():
     """T027: Verify remember tool is registered on the MCP server."""
     from src.mcp.server import mcp
-
-    assert "remember" in mcp._tool_manager._tools
+    tools = asyncio.run(mcp.list_tools())
+    names = {t.name for t in tools}
+    assert "remember" in names
 
 
 # ---------------------------------------------------------------------------
@@ -44,8 +53,7 @@ def test_remember_tool_valid_input():
     mock_service.store_memory.return_value = _make_memory()
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="My favorite color is blue", confidence=0.85)
+        result = _get_tool_fn("remember")(content="My favorite color is blue", confidence=0.85)
 
     assert isinstance(result, str)
     assert "Memory stored with id:" in result
@@ -64,8 +72,7 @@ def test_remember_tool_returns_memory_id():
     mock_service.store_memory.return_value = memory
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="My favorite color is blue", confidence=0.85)
+        result = _get_tool_fn("remember")(content="My favorite color is blue", confidence=0.85)
 
     assert "a1b2c3d4-e5f6-7890-abcd-ef1234567890" in result
 
@@ -82,8 +89,7 @@ def test_remember_tool_returns_str_type():
     mock_service.store_memory.return_value = _make_memory()
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="valid content", confidence=0.5)
+        result = _get_tool_fn("remember")(content="valid content", confidence=0.5)
 
     assert type(result) is str
 
@@ -100,8 +106,7 @@ def test_remember_tool_empty_memory_error():
     mock_service.store_memory.side_effect = ValueError("Memory text cannot be empty.")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="", confidence=0.5)
+        result = _get_tool_fn("remember")(content="", confidence=0.5)
 
     assert isinstance(result, str)
     assert "Memory text cannot be empty." in result
@@ -119,8 +124,7 @@ def test_remember_tool_exceeds_max_length_error():
     mock_service.store_memory.side_effect = ValueError("Memory text exceeds maximum length of 4000 characters")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="x" * 5000, confidence=0.5)
+        result = _get_tool_fn("remember")(content="x" * 5000, confidence=0.5)
 
     assert isinstance(result, str)
     assert "exceeds" in result.lower() or "length" in result.lower()
@@ -138,8 +142,7 @@ def test_remember_tool_invalid_confidence_error():
     mock_service.store_memory.side_effect = ValueError("Confidence must be between 0.0 and 1.0")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="valid content", confidence=1.5)
+        result = _get_tool_fn("remember")(content="valid content", confidence=1.5)
 
     assert isinstance(result, str)
     assert "confidence" in result.lower() or "0.0" in result
@@ -157,8 +160,7 @@ def test_remember_tool_embedding_failure():
     mock_service.store_memory.side_effect = RuntimeError("model crashed")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="valid content", confidence=0.5)
+        result = _get_tool_fn("remember")(content="valid content", confidence=0.5)
 
     assert isinstance(result, str)
     assert "Failed to store memory" in result
@@ -176,8 +178,7 @@ def test_remember_tool_neo4j_failure():
     mock_service.store_memory.side_effect = Exception("database down")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import remember
-        result = remember.fn(content="valid content", confidence=0.5)
+        result = _get_tool_fn("remember")(content="valid content", confidence=0.5)
 
     assert isinstance(result, str)
     assert "Failed to store memory" in result
@@ -190,9 +191,10 @@ def test_remember_tool_neo4j_failure():
 def test_mcp_server_registers_recall_tool():
     """T073: Verify recall tool is registered alongside remember tool."""
     from src.mcp.server import mcp
-
-    assert "recall" in mcp._tool_manager._tools
-    assert "remember" in mcp._tool_manager._tools
+    tools = asyncio.run(mcp.list_tools())
+    names = {t.name for t in tools}
+    assert "recall" in names
+    assert "remember" in names
 
 
 # ---------------------------------------------------------------------------
@@ -208,8 +210,7 @@ def test_recall_tool_valid_input():
     mock_service.search_memory.return_value = [(memory, 0.9)]
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="color preferences", limit=10)
+        result = _get_tool_fn("recall")(query="color preferences", limit=10)
 
     assert isinstance(result, str)
     assert memory.content in result
@@ -227,8 +228,7 @@ def test_recall_tool_no_results():
     mock_service.search_memory.return_value = []
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="quantum physics", limit=10)
+        result = _get_tool_fn("recall")(query="quantum physics", limit=10)
 
     assert isinstance(result, str)
     assert "No memories found" in result
@@ -246,8 +246,7 @@ def test_recall_tool_empty_query_error():
     mock_service.search_memory.side_effect = ValueError("Query cannot be empty.")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="", limit=10)
+        result = _get_tool_fn("recall")(query="", limit=10)
 
     assert isinstance(result, str)
     assert "Query cannot be empty." in result
@@ -265,8 +264,7 @@ def test_recall_tool_embedding_failure():
     mock_service.search_memory.side_effect = RuntimeError("model crashed")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="valid query", limit=10)
+        result = _get_tool_fn("recall")(query="valid query", limit=10)
 
     assert isinstance(result, str)
     assert "Failed to search memories" in result
@@ -284,8 +282,7 @@ def test_recall_tool_neo4j_failure():
     mock_service.search_memory.side_effect = Exception("database down")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="valid query", limit=10)
+        result = _get_tool_fn("recall")(query="valid query", limit=10)
 
     assert isinstance(result, str)
     assert "Failed to search memories" in result
@@ -303,8 +300,7 @@ def test_recall_tool_respects_limit():
     mock_service.search_memory.return_value = []
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        recall.fn(query="color preferences", limit=5)
+        _get_tool_fn("recall")(query="color preferences", limit=5)
 
     mock_service.search_memory.assert_called_once_with("color preferences", 5)
 
@@ -321,8 +317,7 @@ def test_recall_tool_invalid_limit():
     mock_service.search_memory.side_effect = ValueError("Limit must be at least 1.")
 
     with patch.object(server_module, "service", mock_service):
-        from src.mcp.server import recall
-        result = recall.fn(query="valid query", limit=0)
+        result = _get_tool_fn("recall")(query="valid query", limit=0)
 
     assert isinstance(result, str)
     assert "Limit must be at least 1." in result
