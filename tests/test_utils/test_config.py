@@ -63,3 +63,21 @@ class TestConfig:
         assert "Field required" in error_message
         # Check that it's a validation error with multiple fields
         assert "validation error" in error_message.lower()
+
+    def test_embedding_cache_dir_default(self, monkeypatch):
+        """T003: Config uses .cache/models default when MEMENTO_EMBEDDING_CACHE_DIR is unset."""
+        monkeypatch.setenv("MEMENTO_EMBEDDING_PROVIDER", "local")
+        monkeypatch.setenv("MEMENTO_EMBEDDING_MODEL", "all-MiniLM-L6-v2")
+        monkeypatch.setenv("MEMENTO_NEO4J_URI", "bolt://localhost:7687")
+        monkeypatch.setenv("MEMENTO_NEO4J_USER", "neo4j")
+        monkeypatch.setenv("MEMENTO_NEO4J_PASSWORD", "password")
+        monkeypatch.delenv("MEMENTO_EMBEDDING_CACHE_DIR", raising=False)
+
+        config = Config()
+
+        assert config.embedding_cache_dir == ".cache/models"
+
+    def test_no_mcp_host_or_mcp_port(self):
+        """T004: Config must not have mcp_host or mcp_port fields."""
+        assert "mcp_host" not in Config.model_fields, "Config must not have mcp_host field"
+        assert "mcp_port" not in Config.model_fields, "Config must not have mcp_port field"

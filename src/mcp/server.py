@@ -1,4 +1,7 @@
 """MCP server exposing remember and recall tools via HTTP transport."""
+import asyncio
+from contextlib import asynccontextmanager
+
 from fastmcp import FastMCP
 
 from src.graph.neo4j import Neo4jRepository
@@ -6,12 +9,27 @@ from src.memory.service import MemoryService
 from src.utils.config import Config
 from src.utils.factory import Factory
 
-config = Config()
-embedder = Factory.create_embedder(config)
-repository = Neo4jRepository(uri=config.neo4j_uri, user=config.neo4j_user, password=config.neo4j_password)
-service = MemoryService(config=config, embedder=embedder, repository=repository)
+config: Config | None = None
+embedder = None
+repository: Neo4jRepository | None = None
+service: MemoryService | None = None
 
-mcp = FastMCP("Memento")
+
+@asynccontextmanager
+async def lifespan(_mcp):
+    global config, embedder, repository, service
+    config = Config()
+    embedder = Factory.create_embedder(config)
+    repository = Neo4jRepository(uri=config.neo4j_uri, user=config.neo4j_user, password=config.neo4j_password)
+    await asyncio.to_thread(repository.ensure_vector_index)
+    service = MemoryService(config=config, embedder=embedder, repository=repository)
+    try:
+        yield
+    finally:
+        await asyncio.to_thread(repository.close)
+
+
+mcp = FastMCP("Memento", lifespan=lifespan)
 
 
 @mcp.tool()
@@ -41,8 +59,3 @@ def recall(query: str, limit: int = 10) -> str:
         return str(e)
     except Exception:
         return "Failed to search memories: unexpected error. Please try again."
-
-
-if __name__ == "__main__":
-    repository.ensure_vector_index()
-    mcp.run(transport="http", host=config.mcp_host, port=config.mcp_port)

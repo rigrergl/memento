@@ -4,7 +4,7 @@
 Accepted
 
 ## Date
-2026-04-08
+2026-04-08 (amended 2026-04-20: power-user transport moved from stdio to HTTP; see Local Setup section)
 
 ## Context
 
@@ -74,7 +74,7 @@ Every environment starts the server the same way: by invoking the `fastmcp` CLI,
 | Environment | Command |
 |---|---|
 | Dev (VM) | `fastmcp run src/mcp/server.py --reload` |
-| Power user (container) | `fastmcp run src/mcp/server.py` (stdio is the CLI default) |
+| Power user (container) | `fastmcp run src/mcp/server.py --transport http --host 0.0.0.0 --port 8000` |
 | Cloud Run | `fastmcp run src/mcp/server.py --transport http --host 0.0.0.0 --port 8080` |
 
 This replaces the previous `python -m src.mcp.server` entrypoint and its `if __name__ == "__main__":` block. Rationale: we already need `fastmcp run` for `--reload` in dev, and the FastMCP CLI is already a runtime dependency inside the container. Having a second hand-rolled `__main__` block that does a slightly different version of the same job (different transport default, separate place where startup logic lives) is pure duplication and was the root cause of the `ensure_vector_index()` drift noted below.
@@ -93,7 +93,7 @@ This replaces the previous `python -m src.mcp.server` entrypoint and its `if __n
    ENTRYPOINT ["fastmcp", "run", "src/mcp/server.py"]
    CMD []
    ```
-   Power-user `docker compose run --rm -T memento` picks up the empty `CMD` and gets stdio. The Terraform config sets Cloud Run's container `args = ["--transport", "http", "--host", "0.0.0.0", "--port", "8080"]`, which get appended to the ENTRYPOINT at container start. Port 8080 matches Cloud Run's `$PORT` default; the exact wiring (e.g. as a Terraform variable in a single place) is an implementation detail.
+   Each environment supplies its own flags: the power-user `docker-compose.yml` sets `command: ["--transport", "http", "--host", "0.0.0.0", "--port", "8000"]`, so `docker compose up -d` runs Memento as an HTTP daemon on loopback. The Terraform config sets Cloud Run's container `args = ["--transport", "http", "--host", "0.0.0.0", "--port", "8080"]`. Both append to the same ENTRYPOINT. Port 8080 matches Cloud Run's `$PORT` default; the exact wiring (e.g. as a Terraform variable in a single place) is an implementation detail.
 5. **Tests that currently import `server.py`** need to be checked — any that relied on the `__main__` block's side effects (none expected, but worth confirming) need to start the server via the lifespan path instead.
 
 ### Credentials and environment variables
@@ -102,10 +102,10 @@ This replaces the previous `python -m src.mcp.server` entrypoint and its `if __n
 
 All three consumers of Neo4j credentials — the Neo4j image, the Memento app, and the Neo4j MCP server — read from the same `MEMENTO_NEO4J_*` variables. Changing the password in one place propagates everywhere.
 
-The compose file interpolates from `MEMENTO_NEO4J_PASSWORD`:
+The compose file interpolates from `MEMENTO_NEO4J_PASSWORD` with no inline default. Both services use the `${VAR:?error}` form, so `docker compose` errors at config-time (before any container starts) when the variable is unset, producing a clear actionable message rather than a confusing Neo4j-side auth failure later:
 
 ```yaml
-NEO4J_AUTH: neo4j/${MEMENTO_NEO4J_PASSWORD:-memento}
+NEO4J_AUTH: neo4j/${MEMENTO_NEO4J_PASSWORD:?MEMENTO_NEO4J_PASSWORD must be set (copy .env.example to .env and fill it in)}
 ```
 
 The `.mcp.json` Neo4j MCP server entry maps to the same vars:
@@ -120,25 +120,26 @@ The `.mcp.json` Neo4j MCP server entry maps to the same vars:
 
 **Power users (docker-compose)**
 
-If no `MEMENTO_NEO4J_PASSWORD` env var is set, it falls back to `memento`. Security-conscious users can create a `.env` to override it without touching the compose file. Power users who don't care run `docker compose up` with zero configuration.
+The compose file ships with no fallback default for `MEMENTO_NEO4J_PASSWORD` — users must supply it via a `.env` file (or shell environment) before running `docker compose up`. Shipping with a hard-coded default password was rejected: it normalises a credential that ends up identical across every deployment, creates a false impression of "configured" security, and trains users not to think about secrets. The 2-second `cp .env.example .env` step plus picking a password is a clear signal that this is a real database with a real credential.
 
 Neo4j's host ports are bound to `127.0.0.1` (e.g. `127.0.0.1:7687:7687`), making them reachable only from the host machine. Docker's default is `0.0.0.0`, which would expose the database to the local network — a real attack surface on shared networks (café, office, etc.). Container-to-container traffic between Memento and Neo4j uses the Docker internal network and is unaffected by this binding.
 
 **Development (VM)**
 
-A `.env` file is used and gitignored. `.env.example` is committed with values pre-filled (excerpt):
+A `.env` file is used and gitignored. `.env.example` is committed as a placeholder template — non-secret values are pre-filled, the password is left blank with a comment indicating Neo4j's 8-character minimum (excerpt):
 
 ```
 MEMENTO_NEO4J_URI=bolt://localhost:7687
 MEMENTO_NEO4J_USER=neo4j
-MEMENTO_NEO4J_PASSWORD=memento
+# Set a password of your choice (Neo4j requires a minimum of 8 characters).
+MEMENTO_NEO4J_PASSWORD=
 MEMENTO_EMBEDDING_PROVIDER=local
 MEMENTO_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
 MEMENTO_EMBEDDING_CACHE_DIR=.cache/models
 # ...
 ```
 
-Dev copies `.env.example` to `.env` — no values need changing.
+Dev copies `.env.example` to `.env` and fills in `MEMENTO_NEO4J_PASSWORD` before starting the stack. Same flow for power users.
 
 This follows the [12-factor app](https://12factor.net/config) convention and maps naturally to pydantic-settings: env vars are the source of truth, `.env` provides local defaults, and Cloud Run overrides them directly without any profile-switching logic. This is the Python idiomatic equivalent of Spring's `application-{profile}.yml` — simpler because there is no profile concept, just individual vars set per environment.
 
@@ -152,22 +153,34 @@ Transport, host, and port are **not** environment variables — they are CLI fla
 
 ### Local Setup (power users)
 
-The standard for distributing containerized MCP servers is `docker run --rm -i`, which preserves stdio transport — the same transport used by all official Anthropic reference servers and Docker's MCP Toolkit. No HTTP transport is needed.
+Power users clone the repo, start the stack once, and point their MCP client at Memento's HTTP endpoint via a stdio↔HTTP bridge. This mirrors the [Graphiti](https://github.com/getzep/graphiti) pattern for MCP servers with database sidecars and unifies transport with Cloud Run.
 
-Memento needs a Neo4j sidecar. The solution is `docker compose run`, which handles network attachment automatically and waits for Neo4j's healthcheck to pass before Memento starts:
+The Memento image is published to GitHub Container Registry (`ghcr.io/rigrergl/memento:<version>`) with pinned semver tags and referenced by the committed `docker-compose.yml`. Users clone the repo — no separate compose-file download, no local image build. The publish workflow builds a multi-architecture manifest (`linux/amd64` + `linux/arm64`) so Apple Silicon users get native performance without Rosetta. Releases are initiated by bumping `[project] version` in `pyproject.toml`: an `auto-tag.yml` GitHub Actions workflow runs on pushes to `main`, creates and pushes the matching git tag if it does not yet exist, and that tag triggers the Docker publish workflow.
+
+**Install**:
+
+```bash
+git clone https://github.com/rigrergl/memento.git
+cd memento
+docker compose up -d
+```
+
+**`docker-compose.yml`** (illustrative excerpts; the authoritative file — including the Memento healthcheck and other implementation details — is specified in spec 002-container-setup):
 
 ```yaml
-# docker-compose.yml
 services:
   memento:
-    image: your-registry/memento
+    image: ghcr.io/rigrergl/memento:v0.2.0  # pinned; bumped per release
     depends_on:
       neo4j:
         condition: service_healthy
     environment:
       MEMENTO_NEO4J_URI: bolt://neo4j:7687
       MEMENTO_NEO4J_USER: neo4j
-      MEMENTO_NEO4J_PASSWORD: ${MEMENTO_NEO4J_PASSWORD:-memento}
+      MEMENTO_NEO4J_PASSWORD: ${MEMENTO_NEO4J_PASSWORD:?must be set; copy .env.example to .env}
+    command: ["--transport", "http", "--host", "0.0.0.0", "--port", "8000"]
+    ports:
+      - "127.0.0.1:8000:8000"
 
   neo4j:
     image: neo4j:2026.03.1 # Pin to specific CalVer; neo4j:5 is legacy stream
@@ -175,7 +188,7 @@ services:
       - "127.0.0.1:7687:7687"
       - "127.0.0.1:7474:7474"
     environment:
-      NEO4J_AUTH: neo4j/${MEMENTO_NEO4J_PASSWORD:-memento}
+      NEO4J_AUTH: neo4j/${MEMENTO_NEO4J_PASSWORD:?must be set; copy .env.example to .env}
     healthcheck:
       test: ["CMD-SHELL", "wget --no-verbose --tries=1 --spider http://localhost:7474 || exit 1"]
       interval: 5s
@@ -183,26 +196,75 @@ services:
       retries: 10
     volumes:
       - neo4j_data:/data
+
+volumes:
+  neo4j_data:
 ```
 
-The MCP client spawns Memento as a stdio subprocess via compose. The snippet below is the **power user's own MCP client config** (e.g. `~/.claude.json` or the equivalent for their client) — it is **not** the `.mcp.json` committed to this repo. The committed `.mcp.json` (shown earlier in §"MCP configuration as repo files") is for developers working *on* Memento; power users consuming Memento point their own client at the compose-run command:
+Memento's HTTP port and Neo4j's ports are bound to `127.0.0.1` to avoid exposing them on shared networks (café, office, etc.). Container-to-container traffic uses the Docker internal network and is unaffected.
+
+**MCP client config** — the power user's own (e.g. `~/.claude.json`), **not** the committed `.mcp.json` shown earlier in §"MCP configuration as repo files".
+
+**Preferred (native HTTP — Claude Code and other modern clients)**
+
+Most current MCP clients support HTTP transport natively. No bridge process required:
 
 ```json
 {
   "mcpServers": {
     "memento": {
-      "command": "docker",
-      "args": ["compose", "-f", "/path/to/docker-compose.yml", "run", "--rm", "-T", "memento"]
+      "type": "http",
+      "url": "http://localhost:8000/mcp/"
     }
   }
 }
 ```
 
-The `-T` flag disables pseudo-TTY allocation. This is **required** for MCP stdio transport: MCP clients communicate over line-delimited JSON-RPC on piped stdin/stdout, and TTY allocation can corrupt that framing. This mirrors the `docker run --rm -i` (no `-t`) convention used by the Anthropic reference MCP servers.
+**Fallback (stdio↔HTTP bridge — Claude Desktop and other stdio-only clients)**
 
-On first invocation, compose starts Neo4j and waits for its healthcheck to pass before launching Memento. Neo4j stays running between spawns, and its data persists via a named volume. No wrapper script or manual network management required.
+Claude Desktop's `claude_desktop_config.json` only supports stdio-launched subprocess entries; it cannot connect to HTTP servers directly. Users of stdio-only clients need a bridge process. Two equivalent options are documented; the user picks whichever runtime they already have:
 
-> **First-spawn cold start**: Neo4j typically takes ~10–30s to become healthy from cold. The first MCP spawn of the day (or after a reboot) will block on that; subsequent spawns are fast because Neo4j stays up between them. MCP clients usually have generous handshake timeouts, but users should expect the first connection to be noticeably slower.
+```jsonc
+// Option 1: npx bridge (mcp-remote)
+{
+  "mcpServers": {
+    "memento": {
+      "command": "npx",
+      "args": ["-y", "mcp-remote", "http://localhost:8000/mcp/"]
+    }
+  }
+}
+
+// Option 2: uvx bridge (mcp-proxy)
+{
+  "mcpServers": {
+    "memento": {
+      "command": "uvx",
+      "args": ["mcp-proxy", "http://localhost:8000/mcp/"]
+    }
+  }
+}
+```
+
+Neither bridge is maintained by this project; both are thin external dependencies on the user's side.
+
+**Why HTTP, not stdio** (amended from the original draft):
+
+- **Unified transport.** Same `fastmcp run --transport http` invocation locally and in Cloud Run; same lifespan path, same test surface. No stdio-over-docker-piping quirks (`-T` flag, TTY framing).
+- **Lifecycle decoupled from MCP spawns.** Neo4j cold start (~10–30s) happens during `docker compose up -d`, not on the first MCP tool call. Subsequent client reconnects are immediate.
+- **Debuggability.** Standard Docker tooling — `docker compose logs memento`, `docker compose ps`, `curl localhost:8000/mcp/` for a sanity check — instead of stdio introspection.
+
+Tradeoff: the user manages the daemon (`docker compose up -d` once per reboot), where the stdio draft lazy-started per spawn. Acceptable for the developer audience this path targets.
+
+**Upgrade flow.** Releases bump the pinned `image:` tag in `docker-compose.yml` on `main`. Users upgrade with:
+
+```bash
+git pull
+docker compose pull
+docker compose up -d
+```
+
+Pinned semver keeps upgrades explicit and aligned with release notes. `:latest` is intentionally avoided — it can silently deliver breaking changes (schema migrations, Neo4j major-version bumps, tool-schema changes, env-var renames, embedding-model swaps that invalidate existing vectors).
 
 The `docker-compose.yml` is **not used for cloud deployment** — it exists solely for local power users.
 
@@ -214,7 +276,7 @@ The `docker-compose.yml` is **not used for cloud deployment** — it exists sole
 - [Neo4j Aura Free](https://neo4j.com/cloud/platform/aura-graph-database/faq/) is sufficient for the target scale (personal, friends, and family).
 - **Total cost: $0/month** at this scale. Clear upgrade path to self-hosted Neo4j on GCE if needed.
 
-No docker-compose in cloud. The Memento image is pushed to Artifact Registry and deployed directly to Cloud Run. Neo4j Aura is an external managed service — no sidecar needed.
+No docker-compose in cloud. Cloud Run pulls the **same pinned Memento image tag** used locally — either directly from `ghcr.io`, or mirrored to Artifact Registry for lower intra-GCP latency. The multi-registry publish pipeline (ghcr + AR via Workload Identity Federation) is deferred to the Cloud Run spec — see `Documentation/misc/planning.md`. Neo4j Aura is an external managed service — no sidecar needed.
 
 ### Dockerfile Strategy
 
@@ -223,9 +285,9 @@ A single multi-stage `Dockerfile`:
 - **Builder stage**: Installs `uv`, resolves and installs dependencies into a venv.
 - **Runtime stage**: Copies only the venv and source into a slim Python image. No build tools in the final image.
 
-The image's `ENTRYPOINT` is `fastmcp run src/mcp/server.py` with an empty `CMD`. The same image serves both environments — power users build locally via `docker compose up --build` and get stdio by default, Cloud Run pulls from Artifact Registry and passes `--transport http --host 0.0.0.0 --port 8080` as the container `args`. The only differences between environments are Neo4j connection config (env vars) and the CLI flags passed to the entrypoint.
+The image's `ENTRYPOINT` is `fastmcp run src/mcp/server.py` with an empty `CMD`. The same image serves both environments by pinned semver tag — power users pull `ghcr.io/rigrergl/memento:<version>` via `docker compose pull`; Cloud Run pulls the same tag (directly from ghcr, or mirrored to Artifact Registry). Each environment supplies its own CLI flags: compose sets `command: ["--transport", "http", "--host", "0.0.0.0", "--port", "8000"]`; Cloud Run sets `args = ["--transport", "http", "--host", "0.0.0.0", "--port", "8080"]`. The only per-environment differences are Neo4j connection config (env vars) and the port.
 
-> **Deferred**: whether the sentence-transformers model is baked into the image, mounted via a named volume, or replaced altogether (e.g. a hosted embedding API) is intentionally unresolved in this ADR. See `Documentation/known-tech-debt.md` TD-004.
+> **Interim decision**: the sentence-transformers model is baked into the image (see spec 002-container-setup, FR-003). The longer-term choice between baked image, named-volume cache, and hosted embedding API remains open and is tracked in `Documentation/known-tech-debt.md` TD-004.
 
 ### Infrastructure-as-Code
 
@@ -241,12 +303,14 @@ Neo4j Aura is provisioned manually — the Neo4j Labs Aura Terraform provider re
 
 ## Consequences
 
-- Power users get a one-command local setup with no Python or Neo4j prerequisites.
-- **Power-user distribution and Cloud Run cold-start performance are gated on a follow-up embedding-model-distribution ADR** (tracked by TD-004). This ADR green-lights the *architecture* for power-user distribution and Cloud Run deployment, but neither can ship to real users until the embedding strategy is resolved: without it, every power-user MCP spawn re-downloads ~90 MB of model (first-run UX is multi-minute and offline-hostile), and every Cloud Run cold start pays the same cost. The design space (bake model into image, named-volume cache, hosted embedding API, or hybrid) intersects with a separate requirement to let users configure their own embedding provider, and is large enough to warrant its own ADR. The container plumbing in this ADR does not pre-commit to any of those options — they layer on additively.
-- Dev copies `.env.example` to `.env` once — no values to edit. MCP servers are pre-configured via `.mcp.json`.
+- Power users install with no Python or Neo4j prerequisites: `git clone`, `docker compose up -d`, and a one-time MCP client config entry. Modern clients (Claude Code) connect directly via `"type": "http"`; stdio-only clients (Claude Desktop) need a thin bridge (`mcp-remote` or `mcp-proxy`). Memento runs as an HTTP daemon on `127.0.0.1:8000`.
+- Transport is unified across local and Cloud Run (HTTP everywhere except the dev loop, which stays on stdio because Memento runs natively via `uv run fastmcp run --reload`). The same pinned image tag is pulled in both environments.
+- Upgrades are explicit user actions via `git pull && docker compose pull && docker compose up -d`; pinned semver tags prevent silent breaking changes.
+- **Power-user distribution ships with the embedding model baked into the image** as an interim resolution (per spec 002-container-setup, FR-003). This avoids per-spawn re-download for power users and per-cold-start re-download on Cloud Run. The longer-term distribution strategy (named-volume cache, hosted embedding API, or hybrid) intersects with a separate requirement to let users configure their own embedding provider, and remains tracked by TD-004. The container plumbing here does not pre-commit to any of those options — they layer on additively.
+- Dev (and power users) copy `.env.example` to `.env` and set `MEMENTO_NEO4J_PASSWORD` before starting the stack. MCP servers are pre-configured via `.mcp.json`.
 - Single entrypoint across all environments: `fastmcp run src/mcp/server.py` with per-environment CLI flags. The `if __name__ == "__main__":` block in `server.py` is deleted. Global resources (Config, Repository, Service) and `ensure_vector_index()` move into a FastMCP lifespan hook, so they are only initialized when the server starts serving and do not fire on bare imports. `MEMENTO_TRANSPORT`, `MEMENTO_MCP_HOST`, and `MEMENTO_MCP_PORT` env vars and their `Config` fields are removed — these are now CLI flags, not runtime env lookups. TD-003 (`mcp_host` default) is resolved by this deletion.
 - Cloud deployment is zero-cost at personal scale.
 - Claude self-validates by calling Memento tools then inspecting the DB via Neo4j MCP.
-- Secrets are never plaintext in cloud; local defaults pose no meaningful security risk.
+- Secrets are never plaintext in cloud. Locally, the compose file ships with no fallback default for the Neo4j password — users supply their own via `.env` — so we never commit a credential that could leak into screenshots, copy-pasted snippets, or cargo-culted into actually-exposed deployments.
 - One Dockerfile; no per-environment divergence.
 - Cloud infrastructure is reproducible via Terraform.

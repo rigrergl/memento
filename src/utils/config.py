@@ -12,7 +12,6 @@ class Config(BaseSettings):
     Example:
         MEMENTO_EMBEDDING_PROVIDER=local
         MEMENTO_EMBEDDING_MODEL=sentence-transformers/all-MiniLM-L6-v2
-        MEMENTO_EMBEDDING_CACHE_DIR=.cache/models
     """
 
     # Embedding configuration
@@ -23,6 +22,7 @@ class Config(BaseSettings):
         description="Model identifier for embeddings (e.g., 'sentence-transformers/all-MiniLM-L6-v2')"
     )
     embedding_cache_dir: str = Field(
+        default=".cache/models",
         description="Directory path for caching downloaded models"
     )
 
@@ -43,18 +43,6 @@ class Config(BaseSettings):
         ge=1,
         le=100000,
         description="Maximum allowed memory text length in characters"
-    )
-
-    # MCP Server
-    mcp_host: str = Field(
-        default="0.0.0.0",
-        description="MCP server host address"
-    )
-    mcp_port: int = Field(
-        default=8000,
-        ge=1024,
-        le=65535,
-        description="MCP server port number"
     )
 
     model_config = {
