@@ -61,6 +61,12 @@ When reviewing architecture or planning tasks:
 
 **Example**: When adding a dependency, search PyPI for the latest version and release date rather than using potentially outdated training data.
 
+## Versioning
+
+**IMPORTANT**: Update the version in `pyproject.toml` whenever you make any functional change — new features, bug fixes, behavior changes, or dependency updates. Use [semantic versioning](https://semver.org/): patch for bug fixes, minor for new features, major for breaking changes.
+
+Do not skip this step when wrapping up a task. If a PR or commit adds or changes behavior, the version must be bumped.
+
 ## Integration Testing
 
 `Documentation/test-instructions/` contains step-by-step instructions for running integration test suites manually or end-to-end. Each file describes a specific test scenario that requires a live environment (e.g., running Neo4j, loaded embeddings).
