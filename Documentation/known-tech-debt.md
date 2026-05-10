@@ -2,6 +2,65 @@
 
 Items deferred from feature implementation intentionally. Each entry includes the risk level, the trigger condition for remediation, and the affected locations.
 
+**Priority field** (added by 003-container-polish-devloop): `high` = address before the next feature PR or publish cycle; `low` = address when a concrete pain point arises.
+
+---
+
+## TD-007 — Multi-arch (`linux/arm64`) Docker build under QEMU is untested
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Medium — first publish failure would leave arm64 users with a broken image
+**Status**: Deferred — no publish has run yet; flagged as known-unknown
+
+### Priority
+
+high
+
+### Context
+
+`publish.yml` builds for `linux/arm64` via QEMU emulation. The Dockerfile bakes `sentence-transformers/all-MiniLM-L6-v2` during the build stage, which means the model download + Python import happens under QEMU. This can take 5–10× longer than native and has been known to exceed GHA `ubuntu-latest` job timeout windows. No data exists yet because the workflow has never run with this Dockerfile shape.
+
+### Risk
+
+- **If QEMU build times out**: The arm64 image leg fails; only `amd64` ships; Apple Silicon and similar users get the wrong image or a pull error.
+
+### Affected locations
+
+- `.github/workflows/publish.yml` — `build-push-action` matrix
+
+### Remediation (before next publish cycle)
+
+Run `docker buildx build --platform linux/arm64 .` locally (using QEMU via `docker buildx`) to confirm the build completes within a reasonable window. If it times out: split the matrix to use native arm64 GHA runners, or move the model-bake step to a `--platform=$BUILDPLATFORM` stage so it executes on the native host.
+
+---
+
+## TD-008 — `auto-tag.yml` has a TOCTOU race on concurrent merges to `main`
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Medium — loud and recoverable; not silent data loss
+**Status**: Deferred — advisory; low-cadence release schedule makes collision unlikely
+
+### Priority
+
+high
+
+### Context
+
+`auto-tag.yml` checks whether a tag already exists (`git rev-parse`) and then pushes. With `cancel-in-progress: false`, two PRs merging to `main` in quick succession can both pass the check before either pushes; the second `git push origin v$VERSION` fails loudly (non-fast-forward or tag-already-exists). Failure mode is recoverable by re-running the failed workflow run.
+
+### Risk
+
+- **Current**: Low probability (single-digit releases per month).
+- **If release cadence increases**: Race becomes more likely; re-runs become a routine nuisance.
+
+### Affected locations
+
+- `.github/workflows/auto-tag.yml`
+
+### Remediation: N/A — advisory-only
+
+Add a comment to the workflow noting the low-cadence assumption and how to recover (re-run the failed publish workflow). Structural fix (atomic tag-then-push or a lock mechanism) is appropriate only if release cadence rises.
+
 ---
 
 ## TD-001 — Unstructured exception logging in MCP tool error handlers
@@ -9,6 +68,10 @@ Items deferred from feature implementation intentionally. Each entry includes th
 **Feature**: 001-baseline-rag
 **Severity**: Low (current deployment); Medium (before public/multi-tenant release)
 **Status**: Deferred — single-tenant, trusted-user deployment
+
+### Priority
+
+low
 
 ### Context
 
@@ -49,6 +112,10 @@ The raw exception is intentionally **not** forwarded to the MCP client (preventi
 **Severity**: Low (current deployment); Medium (if embedding model or retrieval strategy changes)
 **Status**: Deferred — cosine similarity is correct for text embeddings; no use case for changing it yet
 
+### Priority
+
+low
+
 ### Context
 
 Neo4j bakes the similarity function (`cosine`, `euclidean`) into the vector index at creation time via the `vector.similarity_function` index config option. There is no ALTER INDEX support for changing this value — the only path is dropping the index and recreating it, which requires re-embedding all stored Memory nodes.
@@ -80,6 +147,10 @@ The current implementation hardcodes cosine similarity in `Neo4jRepository.ensur
 **Severity**: Medium (any local deployment on a shared network)
 **Status**: Resolved by ADR-007 / spec 002-container-setup — `Config.mcp_host` and `Config.mcp_port` deleted; transport/host/port now CLI flags; local power-user compose binds `127.0.0.1:8000`.
 
+### Priority
+
+low
+
 ### Context
 
 `Config.mcp_host` defaults to `0.0.0.0`, which binds the HTTP server to all interfaces. On shared networks (café Wi-Fi, office LAN), this exposes the Memento server to other machines on the same network. The safe default for local deployments is `127.0.0.1` (loopback-only). Cloud Run legitimately requires `0.0.0.0` since its traffic router connects to the container over the network.
@@ -105,6 +176,10 @@ Implement ADR-007: remove `mcp_host` and `mcp_port` fields from `src/utils/confi
 **Feature**: ADR-007 container setup
 **Severity**: Low (dev); Medium (power-user container UX)
 **Status**: Deferred — decision intentionally postponed until embedding strategy is finalised
+
+### Priority
+
+low
 
 ### Context
 
@@ -139,3 +214,224 @@ Three broad options exist, none of which this project is ready to commit to:
 2. If local: re-evaluate image-baking vs. volume-mounting as model size grows or if model changes become frequent.
 3. If hosted: design the provider abstraction for API-key management, add a new `IEmbeddingProvider` implementation, and update the cloud and power-user credential flows to include the API key as a secret.
 4. Ensure Cloud Run cold-start behaviour is acceptable under whichever option is chosen.
+
+---
+
+## TD-005 — `Neo4jRepository.close` is not idempotent
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — current Neo4j Python driver tolerates double-close; contract gap only
+**Status**: Deferred — not a runtime bug today; deferred per spec clarification C1–C3
+
+### Priority
+
+low
+
+### Context
+
+`Neo4jRepository.close()` calls `self._driver.close()` unconditionally with no guard against a second call. The current driver tolerates this, but the contract is unmet and a future driver upgrade or a test that double-enters/exits the lifespan will surface the issue.
+
+### Risk
+
+- **Current**: None — driver silently accepts a second close.
+- **Future**: A driver upgrade that raises on double-close will cause test failures or silent lifespan errors.
+
+### Affected locations
+
+- `src/graph/neo4j.py` — `close` method
+
+### Remediation (when double-close occurs in tests or after driver upgrade)
+
+Add a `_closed: bool = False` flag; short-circuit `close()` if already closed.
+
+---
+
+## TD-006 — `_get_tool_fn` helper spins up a new event loop per call
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — functional; negligible overhead in current test count
+**Status**: Deferred — no concrete pain point yet
+
+### Priority
+
+low
+
+### Context
+
+`tests/test_mcp/test_server.py` defines `_get_tool_fn` which calls `asyncio.run(mcp.get_tool(tool_name))`. Each call pays the cost of a fresh event loop. Additionally, `asyncio.run` raises if called inside an already-running loop, which will surface if tests are ever migrated to async.
+
+### Risk
+
+- **Current**: None — sync tests, small test count.
+- **Future**: Refactoring to `pytest-asyncio` style will require replacing this helper.
+
+### Affected locations
+
+- `tests/test_mcp/test_server.py` — `_get_tool_fn` helper
+
+### Remediation (when test suite is migrated to pytest-asyncio or helper causes slowness)
+
+Replace `_get_tool_fn` with a module-level fixture that resolves both tool functions once and yields them, or use `await mcp.get_tool(...)` directly in async tests.
+
+---
+
+## TD-009 — `asyncio.to_thread` is patched at the global `asyncio` module level in tests
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — stylistic; no behaviour difference
+**Status**: Deferred
+
+### Priority
+
+low
+
+### Context
+
+`tests/test_mcp/test_lifespan.py` uses `patch("asyncio.to_thread", ...)` which patches the attribute on the shared `asyncio` package object. The idiomatic, narrower form is `patch("src.mcp.server.asyncio.to_thread", ...)` which scopes the patch to the module under test.
+
+### Risk
+
+- **Current**: None — the global form works because Python module identity is shared.
+- **Future**: A test refactor that imports `asyncio.to_thread` separately could bypass the global patch unexpectedly.
+
+### Affected locations
+
+- `tests/test_mcp/test_lifespan.py`
+
+### Remediation (when touching test_lifespan.py for other reasons)
+
+Replace `patch("asyncio.to_thread", ...)` with `patch("src.mcp.server.asyncio.to_thread", ...)`.
+
+---
+
+## TD-010 — Dockerfile copies `pyproject.toml` into the runtime stage unnecessarily
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — bytes only; no correctness risk
+**Status**: Deferred — unverified whether `fastmcp run` actually reads it at runtime
+
+### Priority
+
+low
+
+### Context
+
+The Dockerfile runtime stage copies `pyproject.toml` from the builder. If `fastmcp run` does not read project metadata at runtime, this file is dead weight in the image layer.
+
+### Risk
+
+- **Current**: Minimal — ~5 KB overhead per image layer.
+
+### Affected locations
+
+- `Dockerfile` — runtime `COPY --from=builder /app/pyproject.toml` line
+
+### Remediation (next Dockerfile touch)
+
+Verify whether `fastmcp run src/mcp/server.py` reads `pyproject.toml` at startup (e.g., run the container, rename the file, confirm tool calls still work). Drop the `COPY` if it is unused.
+
+---
+
+## TD-011 — `.env.example` lists environment variables that `docker-compose.yml` ignores
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — confusing for power users who edit these vars and see no effect
+**Status**: Deferred
+
+### Priority
+
+low
+
+### Context
+
+`.env.example` contains `MEMENTO_NEO4J_URI`, `MEMENTO_NEO4J_USER`, and the `MEMENTO_EMBEDDING_*` block. The compose file hardcodes all of these; only `MEMENTO_NEO4J_PASSWORD` is read from `.env` via substitution. Power users who copy `.env.example` and edit these fields see no effect on the running container.
+
+### Risk
+
+- **Current**: Confusion; no functional impact.
+
+### Affected locations
+
+- `.env.example`
+
+### Remediation (when touching .env.example for other reasons)
+
+Add section headers distinguishing dev-only vars from compose-read vars, e.g., `# Dev-only — ignored by docker-compose`. Alternatively, ship a second `.env.power-user.example` with only `MEMENTO_NEO4J_PASSWORD`.
+
+---
+
+## TD-012 — Cache-dir contract between `Dockerfile` and `Config.embedding_cache_dir` is implicit
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — silent breakage if one side changes without the other
+**Status**: Deferred
+
+### Priority
+
+low
+
+### Context
+
+The Dockerfile bakes the embedding model to `/app/.cache/models`; `Config.embedding_cache_dir` defaults to `.cache/models` (relative to `WORKDIR /app`). They agree only because of the `WORKDIR` alignment. Changing either without updating the other silently breaks offline model loading.
+
+### Risk
+
+- **Current**: None — values are in sync.
+- **Future**: Refactoring either side without updating the other causes a model re-download or a startup failure.
+
+### Affected locations
+
+- `Dockerfile` — `SentenceTransformer(..., cache_folder='/app/.cache/models')` line in builder stage
+- `src/utils/config.py` — `embedding_cache_dir` default
+
+### Remediation (when touching either location)
+
+Add a one-line comment in the Dockerfile pointing to `Config.embedding_cache_dir`'s default (or vice versa) so the dependency is explicit.
+
+---
+
+## TD-013 — ADR-007 illustrative example uses `v0.2.0`; real `docker-compose.yml` uses `v0.0.2`
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — doc drift; no functional impact
+**Status**: Deferred
+
+### Priority
+
+low
+
+### Context
+
+The docker-compose excerpt in `Documentation/ADR/ADR-007-container-setup.md` shows `image: ghcr.io/rigrergl/memento:v0.2.0`. The real `docker-compose.yml` uses `v0.0.x`. The ADR prose notes it is "illustrative", but the version mismatch confuses readers who diff the two.
+
+### Affected locations
+
+- `Documentation/ADR/ADR-007-container-setup.md` — docker-compose excerpt
+
+### Remediation (next ADR touch)
+
+Update the example version to `v0.0.2` (or use a generic `vX.Y.Z` placeholder that doesn't drift).
+
+---
+
+## TD-014 — Two import styles for `src.mcp.server` within `test_server.py`
+
+**Feature**: 003-container-polish-devloop
+**Severity**: Low — stylistic inconsistency
+**Status**: Deferred
+
+### Priority
+
+low
+
+### Context
+
+`tests/test_mcp/test_server.py` uses both `import src.mcp.server as server_module` (for `patch.object`) and `from src.mcp.server import mcp` (inside `_get_tool_fn`). The inconsistency makes the test file slightly harder to read.
+
+### Affected locations
+
+- `tests/test_mcp/test_server.py`
+
+### Remediation (when touching test_server.py for other reasons)
+
+Standardize to the module-level `server_module` reference and access `mcp` as `server_module.mcp` where needed.
