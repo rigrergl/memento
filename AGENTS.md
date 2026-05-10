@@ -61,6 +61,12 @@ When reviewing architecture or planning tasks:
 
 **Example**: When adding a dependency, search PyPI for the latest version and release date rather than using potentially outdated training data.
 
+## Integration Testing
+
+`Documentation/test-instructions/` contains step-by-step instructions for running integration test suites manually or end-to-end. Each file describes a specific test scenario that requires a live environment (e.g., running Neo4j, loaded embeddings).
+
+After making code changes, check this folder to see whether any of the test suites are relevant to what changed. If so, flag the applicable test instructions to the user and ask for permission before running them — do not run integration tests automatically.
+
 ## Documentation Structure
 
 - `Documentation/mcp-tool-specification.md`: Complete MCP tool API specifications
@@ -75,6 +81,8 @@ When reviewing architecture or planning tasks:
 
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
-shell commands, and other important information, read the current plan:
-[specs/002-container-setup/plan.md](specs/002-container-setup/plan.md)
+shell commands, and other important information, read the current plan.
+The current feature directory is defined in `.specify/feature.json` under
+the `feature_directory` key. Read `<feature_directory>/plan.md` for the
+active implementation plan.
 <!-- SPECKIT END -->

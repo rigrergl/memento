@@ -11,7 +11,9 @@ The module MUST export:
 - `mcp: FastMCP` — the server instance with `lifespan=…` attached.
 - `remember: Tool` — registered via `@mcp.tool()`; signature unchanged: `(content: str, confidence: float) -> str`.
 - `recall: Tool` — registered via `@mcp.tool()`; signature unchanged: `(query: str, limit: int = 10) -> str`.
-- Module-level names `config`, `embedder`, `repository`, `service` — initialized to `None` at import time, populated by the lifespan `__aenter__`. These names exist so existing tests can `patch.object(server_module, "service", mock_service)`.
+- Module-level name `service: MemoryService | None` — initialized to `None` at import time, populated by the lifespan `__aenter__`. This name exists so tests can `patch.object(server_module, "service", mock_service)`.
+
+Note (updated by 003-container-polish-devloop / FR-012): `config`, `embedder`, and `repository` are **not** module-level exports — they are local variables inside `lifespan`. The embedder is reentrant and resource-free; the Neo4j driver (`repository`) owns the only leakable handle and is protected by the `try/finally` block.
 
 The module MUST NOT export:
 
@@ -32,12 +34,13 @@ The module MUST NOT export:
 
 The lifespan `__aenter__` MUST, in order:
 
-1. Construct `Config()`.
-2. Call `Factory.create_embedder(config)` and bind to module-level `embedder`.
-3. Construct `Neo4jRepository(uri=..., user=..., password=...)` and bind to module-level `repository`.
-4. Call `await asyncio.to_thread(repository.ensure_vector_index)`.
-5. Construct `MemoryService(config=config, embedder=embedder, repository=repository)` and bind to module-level `service`.
-6. `yield`.
+1. Construct `Config()` (local variable).
+2. Call `Factory.create_embedder(config)` (local variable; embedder is reentrant and resource-free).
+3. Construct `Neo4jRepository(uri=..., user=..., password=...)` (local variable).
+4. Open `try/finally` immediately after step 3 to ensure driver cleanup on any subsequent failure.
+5. Call `await asyncio.to_thread(repository.ensure_vector_index)`.
+6. Construct `MemoryService(config=config, embedder=embedder, repository=repository)` and bind to module-level `service`.
+7. `yield`.
 
 The lifespan `__aexit__` MUST close the Neo4j driver: `await asyncio.to_thread(repository.close)`. (`Neo4jRepository.close` is the existing teardown method; if it does not yet exist, this spec adds it.)
 

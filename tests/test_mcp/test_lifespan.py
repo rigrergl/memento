@@ -7,6 +7,61 @@ import pytest
 
 
 # ---------------------------------------------------------------------------
+# T002: Driver must be closed even when ensure_vector_index raises (FR-002)
+# ---------------------------------------------------------------------------
+
+@pytest.mark.asyncio
+async def test_lifespan_closes_driver_on_startup_failure():
+    """FR-002: repository.close must be called via asyncio.to_thread even when ensure_vector_index raises."""
+    import src.mcp.server as server_module
+
+    mock_config = MagicMock()
+    mock_config.neo4j_uri = "bolt://localhost:7687"
+    mock_config.neo4j_user = "neo4j"
+    mock_config.neo4j_password = "password"
+
+    mock_repo = MagicMock()
+    mock_repo.ensure_vector_index = MagicMock()
+    mock_repo.close = MagicMock()
+
+    to_thread_calls = []
+
+    async def fake_to_thread(fn, *args, **kwargs):
+        to_thread_calls.append(fn)
+        if fn == mock_repo.ensure_vector_index:
+            raise RuntimeError("simulated index failure")
+
+    with patch("src.mcp.server.Config", return_value=mock_config), \
+         patch("src.mcp.server.Factory.create_embedder", return_value=MagicMock()), \
+         patch("src.mcp.server.Neo4jRepository", return_value=mock_repo), \
+         patch("asyncio.to_thread", side_effect=fake_to_thread):
+
+        with pytest.raises(RuntimeError, match="simulated index failure"):
+            async with server_module.lifespan(server_module.mcp):
+                pass
+
+    assert mock_repo.close in to_thread_calls, \
+        "repository.close must be called via asyncio.to_thread even on startup failure"
+    assert to_thread_calls.count(mock_repo.close) == 1
+
+
+# ---------------------------------------------------------------------------
+# T003: Only `service` exists at module scope after refactor (FR-012)
+# ---------------------------------------------------------------------------
+
+def test_module_globals_only_service():
+    """FR-012: only `service` is a module-level name; config/embedder/repository must not be module attributes."""
+    import src.mcp.server as server_module
+
+    assert hasattr(server_module, "service"), "service must be a module-level name"
+    assert server_module.service is None, "service must be None at import time"
+
+    assert not hasattr(server_module, "config"), "config must not be a module-level attribute"
+    assert not hasattr(server_module, "embedder"), "embedder must not be a module-level attribute"
+    assert not hasattr(server_module, "repository"), "repository must not be a module-level attribute"
+
+
+# ---------------------------------------------------------------------------
 # T005: Bare import must not instantiate Config, Neo4jRepository, or SentenceTransformer
 # ---------------------------------------------------------------------------
 
@@ -33,7 +88,7 @@ def test_bare_import_does_not_construct_config_or_repository_or_embedder():
 
 @pytest.mark.asyncio
 async def test_lifespan_populates_module_globals():
-    """T006: After entering the lifespan context, config/embedder/repository/service are non-None."""
+    """T006: After entering the lifespan context, service is non-None at module scope."""
     import src.mcp.server as server_module
 
     mock_config = MagicMock()
@@ -57,9 +112,6 @@ async def test_lifespan_populates_module_globals():
          patch("asyncio.to_thread", new_callable=AsyncMock) as mock_to_thread:
 
         async with server_module.lifespan(server_module.mcp):
-            assert server_module.config is not None
-            assert server_module.embedder is not None
-            assert server_module.repository is not None
             assert server_module.service is not None
 
 

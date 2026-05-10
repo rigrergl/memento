@@ -40,7 +40,7 @@ cp .env.example .env
 docker compose up -d
 ```
 
-This pulls `ghcr.io/rigrergl/memento:v0.0.2` and a Neo4j instance, wires them together using the password from your `.env`, and starts the Memento HTTP server at `http://localhost:8000/mcp/`.
+This pulls `ghcr.io/rigrergl/memento:vX.Y.Z`(see latest published tag for specific version number) and a Neo4j instance, wires them together using the password from your `.env`, and starts the Memento HTTP server at `http://localhost:8000/mcp/`.
 
 > The compose file has no fallback password — `docker compose up` will fail loudly if `MEMENTO_NEO4J_PASSWORD` is unset. This is deliberate: shipping a hard-coded default would create a shared credential across every Memento deployment.
 
@@ -109,20 +109,43 @@ Two tools are available:
 
 > **Use this only if you want to make code changes to Memento itself** (contribute, debug, or experiment with the server's internals). It runs Memento natively via `uv` so edits hot-reload, and uses Docker only for Neo4j. If you just want to *use* Memento as a memory backend for your LLM client, follow [Power-User Setup](#power-user-setup) instead.
 
-**Requirements**: [uv](https://docs.astral.sh/uv/), Docker.
+**Requirements**: [uv](https://docs.astral.sh/uv/) (installs the Python version required by `pyproject.toml` automatically), Docker.
 
 ```bash
 uv sync
 cp .env.example .env
 # Edit .env and set MEMENTO_NEO4J_PASSWORD (Neo4j requires 8+ characters).
+# Recommended: openssl rand -base64 12
 docker compose up neo4j -d
-set -a; source .env; set +a
 ```
 
-Then open Claude Code or Gemini CLI from the repo root. The project-level `.mcp.json` automatically wires two MCP servers:
+The Neo4j Bolt port is bound to `127.0.0.1:7687` — confirm your shell can reach `localhost:7687` before launching an MCP client (i.e., port-forwarding is active if you're on a remote VM).
 
-- **`memento`** — runs `uv run fastmcp run src/mcp/server.py --reload` (edits to tool source are picked up on the next call after the client respawns the subprocess)
-- **`neo4j-cypher`** — connects `mcp-neo4j-cypher` to the same Neo4j instance for direct Cypher queries during development
+Export your `.env` variables before launching the MCP client so the `memento` server can read them:
+
+```bash
+# Option 1 — manual export (one-time per shell)
+set -a; source .env; set +a
+
+# Option 2 — automatic export on cd (recommended for repeated use)
+direnv allow   # requires https://direnv.net; add a .envrc that sources .env
+```
+
+Then open Claude Code or Gemini CLI from the repo root. The project-level `.mcp.json` automatically wires the `memento` MCP server, which runs `uv run fastmcp run src/mcp/server.py --reload` — edits to tool source are picked up on the next call after the client respawns the subprocess.
+
+To inspect database state directly, use `cypher-shell` against the Neo4j container:
+
+```bash
+docker compose exec neo4j cypher-shell -u neo4j -p "$MEMENTO_NEO4J_PASSWORD" \
+  'MATCH (m:Memory) RETURN m.content LIMIT 5'
+```
+
+**Troubleshooting**: If `docker compose up -d` reports an authentication failure after changing `MEMENTO_NEO4J_PASSWORD`, the old password is baked into the `neo4j_data` volume. Wipe it and restart:
+
+```bash
+docker compose down -v
+docker compose up -d
+```
 
 ### Running tests
 
