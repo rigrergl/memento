@@ -40,6 +40,8 @@ cp .env.example .env
 docker compose up -d
 ```
 
+> **Note**: If you have previously run `docker compose up` with a different password, the old password may be baked into the `neo4j_data` volume and memento will fail to connect. See [Neo4j authentication failure](#neo4j-authentication-failure) in Troubleshooting.
+
 This pulls `ghcr.io/rigrergl/memento:vX.Y.Z`(see latest published tag for specific version number) and a Neo4j instance, wires them together using the password from your `.env`, and starts the Memento HTTP server at `http://localhost:8000/mcp/`.
 
 > The compose file has no fallback password — `docker compose up` will fail loudly if `MEMENTO_NEO4J_PASSWORD` is unset. This is deliberate: shipping a hard-coded default would create a shared credential across every Memento deployment.
@@ -140,12 +142,7 @@ docker compose exec neo4j cypher-shell -u neo4j -p "$MEMENTO_NEO4J_PASSWORD" \
   'MATCH (m:Memory) RETURN m.content LIMIT 5'
 ```
 
-**Troubleshooting**: If `docker compose up -d` reports an authentication failure after changing `MEMENTO_NEO4J_PASSWORD`, the old password is baked into the `neo4j_data` volume. Wipe it and restart:
-
-```bash
-docker compose down -v
-docker compose up -d
-```
+**Troubleshooting**: See [Neo4j authentication failure](#neo4j-authentication-failure) if you hit an `Unauthorized` error after changing `MEMENTO_NEO4J_PASSWORD`.
 
 ### Running tests
 
@@ -201,6 +198,7 @@ memento/
 
 ## Documentation
 
+- [Power-User Snooping Guide](Documentation/misc/power-user-guide.md) - MCP Inspector commands, Neo4j browser, useful Cypher queries
 - [Sample Use Cases](Documentation/sample-use-cases.md) - See Memento in action
 - [MCP Tool Specification](Documentation/legacy/mcp-tool-specification.md) - API contract
 - [Data Model](Documentation/legacy/data-model.md) - Memory structure details
@@ -214,6 +212,23 @@ memento/
 - **Container**: Docker (multi-arch `linux/amd64` + `linux/arm64`)
 - **Auth (Cloud — Roadmap)**: Auth0 OAuth 2.1
 - **Testing**: pytest
+
+## Troubleshooting
+
+### Neo4j authentication failure
+
+**Symptom**: The `memento` container exits with `Neo.ClientError.Security.Unauthorized` while Neo4j is running and healthy.
+
+**Cause**: Neo4j sets its password only on first initialization. If a `neo4j_data` volume already exists from a previous run (with a different password), Neo4j keeps the old credential while Memento uses the current value from `.env` — causing the mismatch.
+
+**Fix**: Wipe the volume and restart. This deletes all stored memories.
+
+```bash
+docker compose down -v
+docker compose up -d
+```
+
+---
 
 ## License
 
