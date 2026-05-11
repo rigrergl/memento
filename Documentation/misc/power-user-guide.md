@@ -100,3 +100,25 @@ Delete all memories (destructive — useful for resetting state):
 ```cypher
 MATCH (n) DETACH DELETE n
 ```
+
+---
+
+## Teardown
+
+Stop containers and remove them (keeps Neo4j data volume intact):
+
+```bash
+docker compose down
+```
+
+Full teardown — removes containers **and all stored memories** (Neo4j volume deleted):
+
+```bash
+docker compose down -v
+```
+
+To also remove the pulled images:
+
+```bash
+docker compose down -v --rmi all
+```

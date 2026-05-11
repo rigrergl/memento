@@ -101,6 +101,26 @@ Wire your MCP client to the running Memento server using one of the three option
 git pull && docker compose pull && docker compose up -d
 ```
 
+### Teardown
+
+Stop containers and remove them (keeps Neo4j data volume intact):
+
+```bash
+docker compose down
+```
+
+Full teardown — removes containers **and all stored memories** (Neo4j volume deleted):
+
+```bash
+docker compose down -v
+```
+
+To also remove the pulled images:
+
+```bash
+docker compose down -v --rmi all
+```
+
 Two tools are available:
 - **`remember`** — stores a memory. Params: `content` (string), `confidence` (float 0–1)
 - **`recall`** — semantic search over stored memories. Params: `query` (string), `limit` (int, default 10)
