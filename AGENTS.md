@@ -73,6 +73,10 @@ Do not skip this step when wrapping up a task. If a PR or commit adds or changes
 
 After making code changes, check this folder to see whether any of the test suites are relevant to what changed. If so, flag the applicable test instructions to the user and ask for permission before running them — do not run integration tests automatically.
 
+## Nested Agent Instructions
+
+This repo may contain `AGENTS.md` files in subdirectories. When you read or work within a subdirectory, check for an `AGENTS.md` file there and read it — it contains context and instructions specific to that directory. Subdirectory `AGENTS.md` files take precedence over this root file for anything within their scope.
+
 ## Documentation Structure
 
 - `Documentation/mcp-tool-specification.md`: Complete MCP tool API specifications
@@ -80,6 +84,7 @@ After making code changes, check this folder to see whether any of the test suit
 - `Documentation/data-model.md`: Memory data structure details
 - `Documentation/sample-use-cases.md`: Example usage scenarios
 - `Documentation/ADR/`: Architecture Decision Records
+- `Documentation/strategic-planning/`: Exploratory ideas and research for future improvements (not committed to any roadmap). Read these for context on the direction the project may evolve, but do not treat them as active requirements.
 
 ## Active Technologies
 - Python (see `pyproject.toml` for version constraints), FastMCP, Neo4j driver, sentence-transformers, Pydantic/pydantic-settings
