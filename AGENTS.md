@@ -23,11 +23,30 @@ Key components:
 - `Factory`: Creates the configured embedding provider
 
 
+## Prerequisites
+
+Before running tests or starting the server, ensure:
+
+- **Docker** is running (required for integration tests — Neo4j testcontainer starts automatically)
+- **`uv`** is available in PATH
+- Python dependencies are installed: `uv sync --all-groups`
+
 ## Development Commands
 
-- `uv run pytest` — run all tests
-- `uv run pytest --cov=src --cov-report=term-missing` — run with coverage
 - `uv run python -m src.mcp.server` — start the MCP server
+- `uv run pytest --cov=src --cov-report=term-missing` — run with coverage
+
+## Testing
+
+`uv run pytest` runs both unit and integration tests together. The Neo4j testcontainer starts automatically for integration tests and stops when the session ends.
+
+To run integration tests only:
+
+```bash
+uv run pytest tests/integration/
+```
+
+**Important**: Integration tests are incompatible with `pytest-xdist` (`-n auto`). They share a single Neo4j testcontainer with per-test cleanup via an autouse fixture — parallel execution causes race conditions on the cleanup query. Always run integration tests sequentially.
 
 ## Key Design Patterns
 
@@ -37,6 +56,8 @@ Key components:
 - **Plugin Architecture**: Swappable embedding providers
 
 ## Development Philosophy
+
+Constitutional principles (YAGNI, KISS, TDD, layered architecture, and mandatory testing) are defined in `.specify/constitution.md`. Read it before making architectural decisions or reviewing plans.
 
 **YAGNI (You Ain't Gonna Need It)**: Don't build features, methods, or abstractions until they're actually needed. If we don't have a concrete use case right now, don't implement it. This keeps the codebase lean and focused.
 
@@ -93,7 +114,5 @@ This repo may contain `AGENTS.md` files in subdirectories. When you read or work
 <!-- SPECKIT START -->
 For additional context about technologies to be used, project structure,
 shell commands, and other important information, read the current plan.
-The current feature directory is defined in `.specify/feature.json` under
-the `feature_directory` key. Read `<feature_directory>/plan.md` for the
-active implementation plan.
+The active implementation plan is at `specs/004-tier1-integration-tests/plan.md`.
 <!-- SPECKIT END -->

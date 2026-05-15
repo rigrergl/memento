@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "memento"
-version = "0.0.3"
+version = "0.0.4"
 description = "Long-term memory for LLMs via MCP"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,6 +22,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
+    "testcontainers[neo4j]>=4.8.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -31,3 +32,5 @@ packages = ["src"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-v --color=yes"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
