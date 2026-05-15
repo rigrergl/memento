@@ -1,9 +1,10 @@
 """MCP server exposing remember and recall tools via HTTP transport."""
 import asyncio
+from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from typing import Annotated
 
-from fastmcp import FastMCP
+from fastmcp import Context, FastMCP
 from pydantic import Field
 from starlette.requests import Request
 from starlette.responses import JSONResponse
@@ -13,19 +14,16 @@ from src.memory.service import MemoryService
 from src.utils.config import Config
 from src.utils.factory import Factory
 
-service: MemoryService | None = None
-
 
 @asynccontextmanager
-async def lifespan(_mcp):
-    global service
+async def lifespan(_mcp: FastMCP) -> AsyncIterator[dict]:
     config = Config()
     embedder = Factory.create_embedder(config)
     repository = Neo4jRepository(uri=config.neo4j_uri, user=config.neo4j_user, password=config.neo4j_password)
     try:
         await asyncio.to_thread(repository.ensure_vector_index)
         service = MemoryService(config=config, embedder=embedder, repository=repository)
-        yield
+        yield {"service": service}
     finally:
         await asyncio.to_thread(repository.close)
 
@@ -40,10 +38,12 @@ async def health_check(request: Request) -> JSONResponse:
 
 @mcp.tool()
 def remember(
+    ctx: Context,
     content: Annotated[str, Field(description="The text to store as a memory. Must be non-empty and at most 4000 characters.")],
     confidence: Annotated[float, Field(description="How confident you are in this memory, from 0.0 (uncertain) to 1.0 (certain). Values outside [0, 1] are rejected.")],
 ) -> str:
     """Store a memory with the given content and confidence score."""
+    service: MemoryService = ctx.lifespan_context["service"]
     try:
         memory = service.store_memory(content, confidence)
         return f"Memory stored with id: {memory.id}"
@@ -55,10 +55,12 @@ def remember(
 
 @mcp.tool()
 def recall(
+    ctx: Context,
     query: Annotated[str, Field(description="The search query used to find semantically similar memories.")],
     limit: Annotated[int, Field(description="Maximum number of matching memories to return, ordered by relevance.")] = 10,
 ) -> str:
     """Search stored memories semantically and return matching results."""
+    service: MemoryService = ctx.lifespan_context["service"]
     try:
         results = service.search_memory(query, limit)
         if not results:

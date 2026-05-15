@@ -1,6 +1,6 @@
 services:
   memento:
-    image: ghcr.io/rigrergl/memento:v0.0.3
+    image: ghcr.io/rigrergl/memento:v0.0.7
     depends_on:
       neo4j:
         condition: service_healthy

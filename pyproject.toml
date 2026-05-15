@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "memento"
-version = "0.0.3"
+version = "0.0.7"
 description = "Long-term memory for LLMs via MCP"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -22,6 +22,7 @@ dev = [
     "pytest>=8.4.0",
     "pytest-asyncio>=1.2.0",
     "pytest-cov>=7.0.0",
+    "testcontainers[neo4j]>=4.8.0",
 ]
 
 [tool.hatch.build.targets.wheel]
@@ -31,3 +32,12 @@ packages = ["src"]
 testpaths = ["tests"]
 python_files = "test_*.py"
 addopts = "-v --color=yes"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "session"
+# Async tests must share the session loop so they can await the session-scoped FastMCP Client fixture, whose anyio streams are bound to the loop it was created in.
+asyncio_default_test_loop_scope = "session"
+# Silences DeprecationWarnings emitted from inside `testcontainers.neo4j` 4.14.2, which uses its own deprecated `@wait_container_is_ready` / `wait_for_logs(str)` APIs internally. Drop these filters once the upstream library migrates to structured wait strategies.
+filterwarnings = [
+    "ignore:The @wait_container_is_ready decorator is deprecated:DeprecationWarning",
+    "ignore:The wait_for_logs function with string or callable predicates is deprecated:DeprecationWarning",
+]

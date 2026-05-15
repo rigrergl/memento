@@ -182,7 +182,7 @@ memento/
 ├── Documentation/          # Project documentation
 │   ├── ADR/               # Architecture Decision Records
 │   └── legacy/            # Superseded documentation
-├── specs/                 # Feature specifications
+├── specs/                 # Feature specifications (context playgrounds, not living docs — see note below)
 │   ├── 001-baseline-rag/
 │   └── 002-container-setup/
 ├── src/
@@ -200,6 +200,8 @@ memento/
     ├── test_models/
     └── test_utils/
 ```
+
+> **Note on specs**: This project is not spec-anchored. Specs are treated as context playgrounds — version-controlled snapshots of the thinking behind a feature at the time it was planned. If the implementation diverges from a spec, the spec is not updated to match. Use the git history of `specs/` to understand the reasoning behind past decisions, not as a source of truth for current behavior.
 
 ## Core Features
 
