@@ -10,7 +10,7 @@ from testcontainers.neo4j import Neo4jContainer
 from src.mcp.server import mcp
 
 os.environ["MEMENTO_EMBEDDING_PROVIDER"] = "local"
-os.environ["MEMENTO_EMBEDDING_MODEL"] = "all-MiniLM-L6-v2"
+os.environ["MEMENTO_EMBEDDING_MODEL"] = "sentence-transformers/all-MiniLM-L6-v2"
 
 
 @pytest.fixture(scope="session")

@@ -48,6 +48,8 @@ uv run pytest tests/integration/
 
 **Important**: Integration tests are incompatible with `pytest-xdist` (`-n auto`). They share a single Neo4j testcontainer with per-test cleanup via an autouse fixture — parallel execution causes race conditions on the cleanup query. Always run integration tests sequentially.
 
+**Pytest warnings must be fixed immediately.** Any time `uv run pytest` prints a "warnings summary" section, treat it as a failure to address before wrapping up the task — never ignore, defer, or hide it behind a global filter. Fix the warning at its source (update the deprecated API, bump the dependency, adjust the test). If the warning originates inside a third-party library we cannot patch, add a narrow filter in `pyproject.toml` under `[tool.pytest.ini_options].filterwarnings` that matches only the specific message and category, and leave a comment naming the library and the condition for removing the filter.
+
 ## Key Design Patterns
 
 - **Factory Pattern**: For creating embedding providers
@@ -88,11 +90,28 @@ When reviewing architecture or planning tasks:
 
 Do not skip this step when wrapping up a task. If a PR or commit adds or changes behavior, the version must be bumped.
 
+**Bump `pyproject.toml` and `docker-compose.yml` together.** The `image:` tag in `docker-compose.yml` pins `ghcr.io/rigrergl/memento:v<version>` and MUST match the new `pyproject.toml` version. The release flow is: version bump merges to `main` → `.github/workflows/auto-tag.yml` creates the `v<version>` git tag → `.github/workflows/publish.yml` builds and pushes the image. The compose pin needs to track the version that *will* be published.
+
+Before opening a PR that bumps the version, grep the repo for the old version string and update every occurrence — `docker-compose.yml` is the one that's easy to miss.
+
 ## Integration Testing
 
 `Documentation/test-instructions/` contains step-by-step instructions for running integration test suites manually or end-to-end. Each file describes a specific test scenario that requires a live environment (e.g., running Neo4j, loaded embeddings).
 
 After making code changes, check this folder to see whether any of the test suites are relevant to what changed. If so, flag the applicable test instructions to the user and ask for permission before running them — do not run integration tests automatically.
+
+## Specs Are Historical Context, Not Source of Truth
+
+The `specs/` directory contains feature-by-feature spec/plan/research/tasks documents written *during* development of each change. Treat them as a **context playground** — a record of the rationale and trade-offs considered at the time, useful for understanding why a decision was made.
+
+**Specs are not binding contracts after the fact.** Do not:
+- Treat older FR numbers (e.g., "FR-012") as constraints on current work — the code may have legitimately moved past them.
+- Retroactively edit historical specs to match current code. They are a snapshot, not a living document.
+- Block a clean refactor because a previous spec required the thing you want to remove.
+
+When current code conflicts with a spec: the code wins. The spec is the "why we did it that way at the time" — and that rationale is allowed to be revisited.
+
+The single source of truth is the code itself, plus `AGENTS.md`, `Documentation/ADR/`, and the active in-flight spec (if any). Everything else under `specs/` is reference material.
 
 ## Nested Agent Instructions
 
@@ -100,6 +119,7 @@ This repo may contain `AGENTS.md` files in subdirectories. When you read or work
 
 ## Documentation Structure
 
+- `Documentation/GLOSSARY.md`: Shared vocabulary for the project (domain terms, user roles, deployment modes). Consult and extend this when introducing or disambiguating terminology.
 - `Documentation/mcp-tool-specification.md`: Complete MCP tool API specifications
 - `Documentation/detailed-architecture.md`: Class diagrams and detailed architecture
 - `Documentation/data-model.md`: Memory data structure details

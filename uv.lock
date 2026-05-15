@@ -1008,7 +1008,7 @@ wheels = [
 
 [[package]]
 name = "memento"
-version = "0.0.4"
+version = "0.0.7"
 source = { editable = "." }
 dependencies = [
     { name = "fastmcp" },
